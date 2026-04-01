@@ -1,169 +1,193 @@
 @extends('layouts.mobile')
 
 @section('content')
-<div x-data="fieldCatalogue()" x-init="fetchFields()" x-cloak class="space-y-8">
-    <!-- Search and Filters Section -->
-    <div class="space-y-4">
-        <h2 class="text-3xl font-extrabold tracking-tight">Find Your <span class="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-violet-600">Perfect Match</span></h2>
-        
-        <!-- Premium Search Bar -->
-        <div class="relative group">
-            <input type="text" x-model="searchQuery" placeholder="Search for fields, location..." 
-                   class="w-full h-14 pl-12 pr-6 rounded-2xl glass bg-white/40 dark:bg-slate-900/40 focus:ring-2 focus:ring-blue-500/50 outline-none transition-all shadow-sm group-hover:shadow-md">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 absolute left-4 top-4 text-slate-400 group-focus-within:text-blue-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
+<style>
+    .hero-bg {
+        background-image: linear-gradient(rgba(15, 23, 42, 0.6), rgba(15, 23, 42, 0.6)), url('/images/hero-bg.jpg');
+        background-size: cover;
+        background-position: center;
+    }
+</style>
+
+<div x-data="fieldApp()" x-init="fetchFields()">
+    <!-- HERO SECTION -->
+    <section class="relative -mx-5 -mt-24 min-h-[400px] hero-bg flex items-center mb-12">
+        <div class="relative z-10 px-6 w-full pt-12">
+            <div class="max-w-2xl py-12">
+                <h1 class="text-4xl font-extrabold text-white tracking-tight leading-[1.1] mb-3">
+                    Votre terrain<br>
+                    <span class="text-brand-400">vous attend.</span>
+                </h1>
+                <p class="text-sm text-slate-200 leading-relaxed max-w-sm mb-6">
+                    4 terrains de football professionnels avec gazon synthétique et vestiaires premium. Réservation simplifiée.
+                </p>
+                <div class="flex flex-wrap gap-3">
+                    <a href="#terrains" class="inline-flex items-center gap-2 rounded-lg bg-brand-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-brand-500 transition-colors shadow-lg shadow-brand-600/25">
+                        Réserver
+                    </a>
+                    <a href="#how" class="inline-flex items-center gap-2 rounded-lg bg-white/10 backdrop-blur-sm px-5 py-2.5 text-sm font-bold text-white border border-white/20 hover:bg-white/20 transition-colors text-xs">
+                        Comment ça marche
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Terrains Section -->
+    <section id="terrains" class="mb-20">
+        <div class="text-center mb-10">
+            <span class="inline-block py-1 px-3 rounded-full bg-brand-50 text-brand-600 text-[10px] font-bold uppercase tracking-wide mb-2">
+                Nos Installations
+            </span>
+            <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">
+                Terrains disponibles
+            </h2>
         </div>
 
-        <!-- Filter Chips -->
-        <div class="flex items-center gap-3 overflow-x-auto pb-2 scrollbar-hide no-scrollbar">
-            <template x-for="category in categories" :key="category">
-                <button @click="selectedCategory = category" 
-                        :class="selectedCategory === category ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30' : 'glass text-slate-500'"
-                        class="px-5 py-2.5 rounded-full text-sm font-bold whitespace-nowrap transition-all active:scale-95"
-                        x-text="category">
+        <!-- Loading State -->
+        <template x-if="loading">
+            <div class="flex justify-center items-center h-40">
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-600"></div>
+                <p class="ml-3 text-brand-600 font-bold">Chargement...</p>
+            </div>
+        </template>
+
+        <!-- Error State -->
+        <template x-if="error">
+            <div class="bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded-md">
+                <p class="text-sm text-red-700 font-bold" x-text="errorTitle"></p>
+                <p class="text-xs text-red-600 mt-1" x-text="error"></p>
+                <button @click="fetchFields()" class="mt-3 text-xs bg-red-100 text-red-700 font-bold py-1.5 px-4 rounded w-full">
+                    Réessayer
                 </button>
+            </div>
+        </template>
+
+        <!-- Dynamic Grid -->
+        <div class="grid gap-6 grid-cols-1" x-show="!loading && !error">
+            <template x-for="field in fields" :key="field.id">
+                <article class="group bg-white rounded-2xl border border-slate-200 overflow-hidden hover-lift shadow-sm">
+                    <div class="h-44 bg-gradient-to-br from-slate-100 to-slate-50 flex items-center justify-center relative">
+                        <span class="absolute top-3 right-3 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-600 text-[10px] font-bold border border-emerald-100">
+                            Disponible
+                        </span>
+                        <svg class="w-16 h-16 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                        </svg>
+                    </div>
+                    <div class="p-5">
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="text-lg font-bold text-slate-900" x-text="field.name"></h3>
+                            <span class="text-[10px] font-bold text-slate-400 uppercase">5vs5</span>
+                        </div>
+                        <p class="text-sm text-slate-500 mb-4 line-clamp-2" x-text="field.description"></p>
+                        <div class="flex items-center justify-between pt-4 border-t border-slate-100">
+                            <div>
+                                <span class="text-[10px] text-slate-400 font-bold uppercase block">À partir de</span>
+                                <span class="text-xl font-bold text-slate-900"><span x-text="field.price_per_hour"></span> Dh<span class="text-xs text-slate-400">/h</span></span>
+                            </div>
+                            <button class="px-5 py-2 bg-slate-900 text-white text-sm font-bold rounded-xl hover:bg-brand-600 transition-colors shadow-md">
+                                Réserver
+                            </button>
+                        </div>
+                    </div>
+                </article>
             </template>
         </div>
-    </div>
+    </section>
 
-    <!-- Fields Listing -->
-    <div class="grid grid-cols-1 gap-6">
-        <!-- Loading State: Premium Skeleton Pulsing -->
-        <template x-if="loading">
-            <div class="space-y-6">
-                <template x-for="i in 3">
-                    <div class="glass rounded-3xl overflow-hidden animate-pulse">
-                        <div class="h-48 bg-slate-200 dark:bg-slate-800"></div>
-                        <div class="p-5 space-y-3">
-                            <div class="h-6 bg-slate-200 dark:bg-slate-800 rounded-lg w-2/3"></div>
-                            <div class="h-4 bg-slate-200 dark:bg-slate-800 rounded-lg w-1/2"></div>
-                            <div class="flex justify-between items-center pt-2">
-                                <div class="h-6 bg-slate-200 dark:bg-slate-800 rounded-lg w-20"></div>
-                                <div class="h-10 bg-slate-200 dark:bg-slate-800 rounded-xl w-32"></div>
-                            </div>
-                        </div>
-                    </div>
-                </template>
-            </div>
-        </template>
+    <!-- How it Works -->
+    <section id="how" class="py-12 bg-slate-50 -mx-5 px-5 mb-20 rounded-3xl">
+        <div class="text-center mb-10">
+            <span class="inline-block py-1 px-3 rounded-full bg-brand-50 text-brand-600 text-[10px] font-bold uppercase tracking-wide mb-2">
+                Simple & Rapide
+            </span>
+            <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">Comment ça marche ?</h2>
+        </div>
 
-        <!-- Data State: Dynamic Grid -->
-        <template x-if="!loading && filteredFields().length > 0">
-            <div class="space-y-6">
-                <template x-for="field in filteredFields()" :key="field.id">
-                    <div class="glass rounded-3xl overflow-hidden shadow-sm hover:shadow-xl transition-all group active:scale-[0.98]">
-                        <!-- Image Container -->
-                        <div class="relative h-52 overflow-hidden">
-                            <img :src="field.image_url || 'https://images.unsplash.com/photo-1544919982-b61976f0ba43?q=80&w=800&auto=format&fit=crop'" 
-                                 :alt="field.name" 
-                                 class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
-                            <div class="absolute top-4 right-4 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md px-3 py-1.5 rounded-xl text-sm font-bold shadow-soft">
-                                <span x-text="'$' + field.price"></span><span class="text-xs text-slate-500 font-medium lowercase">/hr</span>
-                            </div>
-                            <div class="absolute bottom-4 left-4 flex gap-2">
-                                <span class="bg-blue-600/90 backdrop-blur-md text-white text-[10px] uppercase tracking-widest font-black px-2 py-1 rounded-md">Featured</span>
-                            </div>
-                        </div>
-                        
-                        <!-- Content -->
-                        <div class="p-5">
-                            <div class="flex justify-between items-start mb-1">
-                                <h3 class="text-xl font-bold tracking-tight" x-text="field.name"></h3>
-                                <div class="flex items-center gap-1 text-amber-500">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 fill-current" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
-                                    <span class="text-xs font-bold transform -translate-y-px">4.8</span>
-                                </div>
-                            </div>
-                            <div class="flex items-center gap-1 text-slate-400 mb-4">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                                </svg>
-                                <span class="text-xs font-medium" x-text="field.address"></span>
-                            </div>
-                            
-                            <div class="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800">
-                                <div class="flex -space-x-2">
-                                    <template x-for="i in 3">
-                                        <div class="w-8 h-8 rounded-full border-2 border-white dark:border-slate-800 bg-slate-200 overflow-hidden">
-                                            <img :src="'https://i.pravatar.cc/100?u=' + Math.random()" alt="avatar">
-                                        </div>
-                                    </template>
-                                    <div class="w-8 h-8 rounded-full border-2 border-white dark:border-slate-800 bg-blue-50 flex items-center justify-center">
-                                        <span class="text-[10px] font-bold text-blue-600">+12</span>
-                                    </div>
-                                </div>
-                                <button class="bg-gradient-to-tr from-blue-600 to-violet-600 text-white px-6 py-3 rounded-2xl text-sm font-bold shadow-lg shadow-blue-500/20 active:scale-95 transition-all">
-                                    Book Now
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </template>
-            </div>
-        </template>
-
-        <!-- Empty State -->
-        <template x-if="!loading && filteredFields().length === 0">
-            <div class="flex flex-col items-center justify-center py-20 text-center space-y-4">
-                <div class="w-20 h-20 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 9.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
+        <div class="space-y-8">
+            <div class="flex gap-4">
+                <div class="w-10 h-10 rounded-lg bg-brand-100 text-brand-600 flex-shrink-0 flex items-center justify-center font-bold">1</div>
+                <div>
+                    <h3 class="font-bold text-slate-900 mb-1">Choisissez</h3>
+                    <p class="text-xs text-slate-600">Sélectionnez le terrain et le créneau idéal.</p>
                 </div>
-                <h3 class="text-xl font-bold text-slate-500">No fields found</h3>
-                <p class="text-slate-400 text-sm">Try adjusting your filters or search query.</p>
             </div>
-        </template>
-    </div>
+            <div class="flex gap-4">
+                <div class="w-10 h-10 rounded-lg bg-brand-600 text-white flex-shrink-0 shadow-lg shadow-brand-200 flex items-center justify-center font-bold">2</div>
+                <div>
+                    <h3 class="font-bold text-slate-900 mb-1">Validez</h3>
+                    <p class="text-xs text-slate-600">Processus sécurisé et vérification rapide.</p>
+                </div>
+            </div>
+            <div class="flex gap-4">
+                <div class="w-10 h-10 rounded-lg bg-emerald-100 text-emerald-600 flex-shrink-0 flex items-center justify-center font-bold">3</div>
+                <div>
+                    <h3 class="font-bold text-slate-900 mb-1">Jouez</h3>
+                    <p class="text-xs text-slate-600">Recevez la confirmation et profitez du match.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="py-12 bg-slate-900 -mx-5 px-8 text-center rounded-3xl mb-20">
+        <h2 class="text-2xl font-extrabold text-white mb-3">Prêt à jouer ?</h2>
+        <p class="text-xs text-slate-400 mb-6">Rejoignez plus de 2,500 joueurs actifs sur ProMatch.</p>
+        <button class="w-full rounded-xl bg-brand-600 py-4 text-sm font-bold text-white shadow-xl shadow-brand-600/20 active:scale-95 transition-transform">
+            Réserver maintenant
+        </button>
+    </section>
+
+    <!-- Footer -->
+    <footer class="py-10 text-center border-t border-slate-200">
+        <p class="text-[10px] uppercase font-bold tracking-widest text-slate-400 mb-2">ProMatch Marroco</p>
+        <p class="text-xs text-slate-300">© 2026 Tous droits réservés.</p>
+    </footer>
 </div>
 
 <script>
-    function fieldCatalogue() {
+    function fieldApp() {
         return {
             fields: [],
             loading: true,
-            searchQuery: '',
-            selectedCategory: 'All Fields',
-            categories: ['All Fields', 'Football', 'Padel', 'Tennis', 'Basketball'],
-            
-            async fetchFields() {
+            error: null,
+            errorTitle: "Erreur de connexion",
+            fetchFields() {
                 this.loading = true;
-                try {
-                    const response = await fetch('/api/public-fields');
-                    if (!response.ok) throw new Error('API fetch failed');
-                    this.fields = await response.json();
-                } catch (error) {
-                    console.error('Error fetching fields:', error);
-                    // Mock data if API is actually missing, for demo purposes in Sprint 1
-                    if (!this.fields.length) {
-                        this.fields = [
-                            { id: 1, name: 'Marrakech Pro Padel', address: 'Gueliz, Marrakech', price: 25, category: 'Padel' },
-                            { id: 2, name: 'Stadium Arena', address: 'Palais des Congrès', price: 40, category: 'Football' },
-                            { id: 3, name: 'Club de Tennis', address: 'Hivernage', price: 15, category: 'Tennis' },
-                        ];
-                    }
-                } finally {
-                    setTimeout(() => { this.loading = false; }, 800); // Small delay for smooth skeleton transition
-                }
-            },
+                this.error = null;
+                this.fields = [];
+                
+                const timestamp = new Date().getTime();
+                fetch('http://10.0.2.2:8000/api/public-fields?t=' + timestamp, { cache: 'no-store' })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Erreur HTTP ' + response.status);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data && data.success === true && data.data) {
+                            this.fields = data.data; 
+                        } else {
+                            this.fields = data.data || data || [];
+                        }
 
-            filteredFields() {
-                return this.fields.filter(field => {
-                    const matchesSearch = field.name.toLowerCase().includes(this.searchQuery.toLowerCase()) || 
-                                          field.address.toLowerCase().includes(this.searchQuery.toLowerCase());
-                    const matchesCategory = this.selectedCategory === 'All Fields' || field.category === this.selectedCategory;
-                    return matchesSearch && matchesCategory;
-                });
+                        this.loading = false;
+                        
+                        if (!this.fields || this.fields.length === 0) {
+                            this.errorTitle = "Le serveur a répondu, mais sans données !";
+                            this.error = "Réponse brute : " + JSON.stringify(data);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Erreur:', error);
+                        this.loading = false;
+                        this.errorTitle = "Erreur de connexion pure";
+                        this.error = error.message;
+                    });
             }
         }
     }
 </script>
-
-<style>
-    .no-scrollbar::-webkit-scrollbar { display: none; }
-    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-    .shadow-soft { box-shadow: 0 10px 40px rgba(0, 0, 0, 0.05); }
-</style>
 @endsection

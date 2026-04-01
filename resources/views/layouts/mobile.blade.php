@@ -6,19 +6,33 @@
     <meta name="theme-color" content="#2563eb">
     <title>{{ config('app.name', 'ProMatch') }}</title>
 
-    <!-- Fonts: Outfit for a premium, modern feel -->
+    <!-- Fonts: Plus Jakarta Sans for the new professional design -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
     <!-- Tailwind CSS 4 & Alpine.js -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
     <style>
-        body { font-family: 'Outfit', sans-serif; }
+        body { font-family: 'Plus Jakarta Sans', 'Outfit', sans-serif; }
         [x-cloak] { display: none !important; }
+        
         .glass { @apply backdrop-blur-md bg-white/10 dark:bg-black/20 border border-white/20 dark:border-white/10; }
+        .glass-nav {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(12px);
+        }
+        
+        .hover-lift {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .hover-lift:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.15);
+        }
+
         .safe-pb { padding-bottom: env(safe-area-inset-bottom, 1.5rem); }
         .gradient-bg {
             background: radial-gradient(circle at top right, rgba(37, 99, 235, 0.15), transparent),
