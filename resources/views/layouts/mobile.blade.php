@@ -36,20 +36,21 @@
         .safe-pb { padding-bottom: env(safe-area-inset-bottom, 1.5rem); }
         .gradient-bg {
             background: radial-gradient(circle at top right, rgba(37, 99, 235, 0.15), transparent),
-                        radial-gradient(circle at bottom left, rgba(124, 58, 237, 0.1), transparent);
+            background: radial-gradient(circle at top right, rgba(22, 163, 74, 0.15), transparent),
+                        radial-gradient(circle at bottom left, rgba(21, 128, 61, 0.1), transparent);
         }
     </style>
 </head>
 <body class="bg-[#F8FAFC] dark:bg-[#020617] text-[#1e293b] dark:text-[#f1f5f9] h-full gradient-bg overflow-x-hidden antialiased">
     <!-- Top Header -->
-    <header class="fixed top-0 left-0 right-0 z-50 glass shadow-sm px-5 py-4 flex items-center justify-between backdrop-blur-xl">
+    <header class="fixed top-0 left-0 right-0 z-50 glass shadow-sm px-6 py-4 flex items-center justify-between backdrop-blur-xl border-b border-brand-100/20">
         <div class="flex items-center gap-2">
-            <div class="w-10 h-10 bg-gradient-to-tr from-blue-600 to-violet-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
+            <div class="w-10 h-10 bg-gradient-to-tr from-brand-600 to-brand-400 rounded-xl flex items-center justify-center shadow-lg shadow-brand-600/20">
                 <span class="text-white font-bold text-xl uppercase italic">P</span>
             </div>
-            <h1 class="text-xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-violet-600">ProMatch</h1>
+            <h1 class="text-xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-brand-700 to-brand-500">ProMatch</h1>
         </div>
-        <button class="relative p-2 rounded-full hover:bg-black/5 transition-colors">
+        <button class="relative p-2 rounded-full hover:bg-brand-50/50 transition-colors">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
             </svg>
@@ -58,36 +59,57 @@
     </header>
 
     <!-- Main Content Area -->
-    <main class="pt-24 pb-32 px-5 min-h-full">
+    <main class="pt-24 pb-36 px-5 min-h-full">
         @yield('content')
     </main>
 
-    <!-- Bottom Navigation Bar -->
-    <nav class="fixed bottom-0 left-0 right-0 z-50 glass border-t border-white/20 dark:border-white/10 px-6 py-4 safe-pb backdrop-blur-2xl">
-        <div class="flex items-center justify-between max-w-lg mx-auto">
-            <a href="#" class="flex flex-col items-center gap-1 text-blue-600 transition-transform active:scale-90">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
+    <!-- Bottom Floating Navigation -->
+    <nav x-data="{ currentPath: window.location.pathname }" 
+         class="fixed bottom-6 left-5 right-5 z-50 bg-slate-900/95 backdrop-blur-2xl rounded-2xl border border-white/10 px-4 py-3 shadow-2xl safe-pb shadow-slate-900/40 translate-z-0">
+        <div class="flex items-center justify-between max-w-lg mx-auto relative h-12">
+            
+            <!-- Accueil -->
+            <a href="/" 
+               :class="currentPath === '/' ? 'text-white' : 'text-slate-400 hover:text-slate-200'"
+               class="relative z-10 flex flex-col items-center justify-center flex-1 h-full transition-all duration-300">
+                <div x-show="currentPath === '/'" x-transition class="absolute inset-0 bg-brand-600 rounded-xl -z-10 shadow-lg shadow-brand-600/30"></div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mb-1" viewBox="0 0 24 24" :fill="currentPath === '/' ? 'currentColor' : 'none'" :stroke="currentPath === '/' ? 'none' : 'currentColor'" stroke-width="2">
                     <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
                 </svg>
-                <span class="text-xs font-semibold">Home</span>
+                <span class="text-[10px] font-bold uppercase tracking-wider">Accueil</span>
             </a>
-            <a href="#" class="flex flex-col items-center gap-1 text-slate-400 hover:text-blue-500 transition-transform active:scale-90">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+
+            <!-- Découvrir -->
+            <a href="/#terrains" 
+               :class="currentPath.includes('explore') ? 'text-white' : 'text-slate-400 hover:text-slate-200'"
+               class="relative z-10 flex flex-col items-center justify-center flex-1 h-full transition-all duration-300">
+                <div x-show="currentPath.includes('explore')" x-transition class="absolute inset-0 bg-brand-600 rounded-xl -z-10"></div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
-                <span class="text-xs font-semibold">Explore</span>
+                <span class="text-[10px] font-bold uppercase tracking-wider">Découvrir</span>
             </a>
-            <a href="#" class="flex flex-col items-center gap-1 text-slate-400 hover:text-blue-500 transition-transform active:scale-90">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+
+            <!-- Réservations -->
+            <a href="#" 
+               :class="currentPath.includes('booking') ? 'text-white' : 'text-slate-400 hover:text-slate-200'"
+               class="relative z-10 flex flex-col items-center justify-center flex-1 h-full transition-all duration-300">
+                <div x-show="currentPath.includes('booking')" x-transition class="absolute inset-0 bg-brand-600 rounded-xl -z-10 shadow-lg shadow-brand-600/30"></div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
-                <span class="text-xs font-semibold">Bookings</span>
+                <span class="text-[10px] font-bold uppercase tracking-wider">Réserver</span>
             </a>
-            <a href="#" class="flex flex-col items-center gap-1 text-slate-400 hover:text-blue-500 transition-transform active:scale-90">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+
+            <!-- Profil -->
+            <a href="#" 
+               :class="currentPath.includes('profile') ? 'text-white' : 'text-slate-400 hover:text-slate-200'"
+               class="relative z-10 flex flex-col items-center justify-center flex-1 h-full transition-all duration-300">
+                <div x-show="currentPath.includes('profile')" x-transition class="absolute inset-0 bg-brand-600 rounded-xl -z-10"></div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
-                <span class="text-xs font-semibold">Profile</span>
+                <span class="text-[10px] font-bold uppercase tracking-wider">Profil</span>
             </a>
         </div>
     </nav>

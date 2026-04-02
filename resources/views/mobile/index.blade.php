@@ -22,7 +22,7 @@
                     4 terrains de football professionnels avec gazon synthétique et vestiaires premium. Réservation simplifiée.
                 </p>
                 <div class="flex flex-wrap gap-3">
-                    <a href="#terrains" class="inline-flex items-center gap-2 rounded-lg bg-brand-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-brand-500 transition-colors shadow-lg shadow-brand-600/25">
+                    <a href="/booking" class="inline-flex items-center gap-2 rounded-lg bg-brand-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-brand-500 transition-colors shadow-lg shadow-brand-600/25">
                         Réserver
                     </a>
                     <a href="#how" class="inline-flex items-center gap-2 rounded-lg bg-white/10 backdrop-blur-sm px-5 py-2.5 text-sm font-bold text-white border border-white/20 hover:bg-white/20 transition-colors text-xs">
@@ -86,9 +86,9 @@
                                 <span class="text-[10px] text-slate-400 font-bold uppercase block">À partir de</span>
                                 <span class="text-xl font-bold text-slate-900"><span x-text="field.price_per_hour"></span> Dh<span class="text-xs text-slate-400">/h</span></span>
                             </div>
-                            <button class="px-5 py-2 bg-slate-900 text-white text-sm font-bold rounded-xl hover:bg-brand-600 transition-colors shadow-md">
+                            <a :href="'/booking?id=' + field.id" class="px-5 py-2 bg-slate-900 text-white text-sm font-bold rounded-xl hover:bg-brand-600 transition-colors shadow-md decoration-0">
                                 Réserver
-                            </button>
+                            </a>
                         </div>
                     </div>
                 </article>
@@ -134,14 +134,14 @@
     <section class="py-12 bg-slate-900 -mx-5 px-8 text-center rounded-3xl mb-20">
         <h2 class="text-2xl font-extrabold text-white mb-3">Prêt à jouer ?</h2>
         <p class="text-xs text-slate-400 mb-6">Rejoignez plus de 2,500 joueurs actifs sur ProMatch.</p>
-        <button class="w-full rounded-xl bg-brand-600 py-4 text-sm font-bold text-white shadow-xl shadow-brand-600/20 active:scale-95 transition-transform">
+        <a href="/booking" class="w-full inline-block text-center rounded-xl bg-brand-600 py-4 text-sm font-bold text-white shadow-xl shadow-brand-600/20 active:scale-95 transition-transform decoration-0">
             Réserver maintenant
-        </button>
+        </a>
     </section>
 
     <!-- Footer -->
     <footer class="py-10 text-center border-t border-slate-200">
-        <p class="text-[10px] uppercase font-bold tracking-widest text-slate-400 mb-2">ProMatch Marroco</p>
+        <p class="text-[10px] uppercase font-bold tracking-widest text-slate-400 mb-2">ProMatch Maroc</p>
         <p class="text-xs text-slate-300">© 2026 Tous droits réservés.</p>
     </footer>
 </div>
