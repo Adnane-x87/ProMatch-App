@@ -84,6 +84,8 @@
                 </div>
                 <input type="tel" placeholder="Téléphone" x-model="formData.phone"
                     class="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none mb-3 transition-all">
+                <input type="email" placeholder="Email" x-model="formData.email"
+                    class="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none mb-3 transition-all">
 
                 <!-- CNI Upload -->
                 <div class="mt-4">
@@ -94,6 +96,7 @@
                         <input type="file" 
                                x-ref="cniInput"
                                accept="image/*" 
+                               capture="environment"
                                class="hidden" 
                                @change="handleFileUpload">
 
@@ -198,6 +201,7 @@
             showSuccess: false,
             error: null, // Error state for UI feedback
             cniPreview: null,
+            cniFile: null, // 👈 Added to store the actual file object
             formData: {
                 field_id: '',
                 date: '',
@@ -206,6 +210,7 @@
                 first_name: '',
                 last_name: '',
                 phone: '',
+                email: '',
                 cni_image_base64: ''
             },
             
@@ -309,10 +314,13 @@
                     return;
                 }
                 
+                this.cniFile = file; // 👈 Store the actual file object
+
                 const reader = new FileReader();
                 reader.onload = (f) => {
                     this.cniPreview = f.target.result;
-                    this.formData.cni_image_base64 = f.target.result;
+                    // We no longer necessarily need the base64 for submission, 
+                    // but we keep the preview for the UI.
                 };
                 reader.readAsDataURL(file);
             },
@@ -324,7 +332,8 @@
                        this.formData.first_name && 
                        this.formData.last_name && 
                        this.formData.phone && 
-                       this.formData.cni_image_base64;
+                       this.formData.email && 
+                       this.cniFile; // 👈 Check for the actual file
             },
 
             get totalPrice() {
@@ -344,14 +353,30 @@
                 this.error = null;
                 
                 try {
+                    // 🚀 NEW: Using FormData for native file upload handling
+                    const body = new FormData();
+                    
+                    // Append all text fields
+                    Object.keys(this.formData).forEach(key => {
+                        if (key !== 'cni_image_base64') {
+                            body.append(key, this.formData[key]);
+                        }
+                    });
+
+                    // Append the actual file
+                    if (this.cniFile) {
+                        body.append('cni_image', this.cniFile); // The backend expects 'cni_image'
+                    }
+
                     const res = await fetch(`${API_CONFIG.baseUrl}/api/reservations`, {
                         method: 'POST',
                         headers: { 
                             'Accept': 'application/json',
-                            'Content-Type': 'application/json',
+                            // ⚠️ DO NOT set Content-Type header when using FormData, 
+                            // the browser will set it automatically with the correct boundary
                             ...(API_CONFIG.token ? { 'Authorization': `Bearer ${API_CONFIG.token}` } : {})
                         },
-                        body: JSON.stringify(this.formData)
+                        body: body
                     });
                     
                     if (res.ok) {
@@ -363,6 +388,7 @@
                 } catch (e) {
                     console.error('Submission error:', e);
                     this.error = "Erreur lors de l'envoi : " + e.message;
+                    alert("سبب الرفض من السيرفر: \n" + e.message);
                 } finally {
                     this.submitting = false;
                 }

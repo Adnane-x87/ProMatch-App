@@ -91,7 +91,7 @@
             </a>
 
             <!-- Réservations -->
-            <a href="#" 
+            <a href="/booking" 
                :class="currentPath.includes('booking') ? 'text-white' : 'text-slate-400 hover:text-slate-200'"
                class="relative z-10 flex flex-col items-center justify-center flex-1 h-full transition-all duration-300">
                 <div x-show="currentPath.includes('booking')" x-transition class="absolute inset-0 bg-brand-600 rounded-xl -z-10 shadow-lg shadow-brand-600/30"></div>
@@ -101,15 +101,15 @@
                 <span class="text-[10px] font-bold uppercase tracking-wider">Réserver</span>
             </a>
 
-            <!-- Profil -->
-            <a href="#" 
-               :class="currentPath.includes('profile') ? 'text-white' : 'text-slate-400 hover:text-slate-200'"
+            <!-- Contact -->
+            <a href="/contact" 
+               :class="currentPath.includes('contact') ? 'text-white' : 'text-slate-400 hover:text-slate-200'"
                class="relative z-10 flex flex-col items-center justify-center flex-1 h-full transition-all duration-300">
-                <div x-show="currentPath.includes('profile')" x-transition class="absolute inset-0 bg-brand-600 rounded-xl -z-10"></div>
+                <div x-show="currentPath.includes('contact')" x-transition class="absolute inset-0 bg-brand-600 rounded-xl -z-10 shadow-lg shadow-brand-600/30"></div>
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                 </svg>
-                <span class="text-[10px] font-bold uppercase tracking-wider">Profil</span>
+                <span class="text-[10px] font-bold uppercase tracking-wider">Contact</span>
             </a>
         </div>
     </nav>

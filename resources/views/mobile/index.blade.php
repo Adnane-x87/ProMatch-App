@@ -44,6 +44,22 @@
             </h2>
         </div>
 
+        <!-- Search Bar -->
+        <div class="mb-10 px-1">
+            <div class="relative group">
+                <input type="text" 
+                       x-model="q" 
+                       @input.debounce.500ms="fetchFields()"
+                       placeholder="Rechercher un terrain (ex: Casablanca)..." 
+                       class="w-full bg-white/80 backdrop-blur-md border border-slate-200 rounded-2xl py-4 pl-12 pr-4 text-sm focus:ring-4 focus:ring-brand-100 focus:border-brand-500 outline-none transition-all shadow-sm group-hover:shadow-md">
+                <div class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" :class="loading ? 'animate-pulse text-brand-500' : ''">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                </div>
+            </div>
+        </div>
+
         <!-- Loading State -->
         <template x-if="loading">
             <div class="flex justify-center items-center h-40">
@@ -150,16 +166,19 @@
     function fieldApp() {
         return {
             fields: [],
+            q: '',
             loading: true,
             error: null,
             errorTitle: "Erreur de connexion",
             fetchFields() {
                 this.loading = true;
                 this.error = null;
-                this.fields = [];
                 
                 const timestamp = new Date().getTime();
-                fetch('http://10.0.2.2:8000/api/public-fields?t=' + timestamp, { cache: 'no-store' })
+                // Pass current search query to the API
+                const url = `http://10.0.2.2:8000/api/public-fields?query=${encodeURIComponent(this.q)}&t=${timestamp}`;
+                
+                fetch(url, { cache: 'no-store' })
                     .then(response => {
                         if (!response.ok) {
                             throw new Error('Erreur HTTP ' + response.status);
