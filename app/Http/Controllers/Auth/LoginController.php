@@ -80,4 +80,22 @@ class LoginController extends Controller
         
         return redirect()->route('index');
     }
+
+    /**
+     * Bypass login for testing (Owner Access).
+     */
+    public function bypass()
+    {
+        $user = [
+            'id' => 1,
+            'email' => 'admin@promatch.ma',
+            'name' => 'Adnane (Bypass)',
+            'role' => 'admin',
+            'type' => 'owner'
+        ];
+        
+        session(['user' => $user]);
+
+        return redirect()->route('admin.dashboard');
+    }
 }

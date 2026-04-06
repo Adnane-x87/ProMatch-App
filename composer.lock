@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "16b7e4546d6ab2e1a01bd1f316b14c1c",
+    "content-hash": "fc5b2332b927f041a6842aa704889cf3",
     "packages": [
         {
             "name": "brick/math",
@@ -2238,16 +2238,16 @@
         },
         {
             "name": "nativephp/mobile",
-            "version": "3.2.1",
+            "version": "3.2.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/NativePHP/mobile-air.git",
-                "reference": "39bd705fbd00b1ca4789c17564b44a202d1176ad"
+                "reference": "866a6dd9896cfdee3f33bfb3a95d568711a6ff02"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/NativePHP/mobile-air/zipball/39bd705fbd00b1ca4789c17564b44a202d1176ad",
-                "reference": "39bd705fbd00b1ca4789c17564b44a202d1176ad",
+                "url": "https://api.github.com/repos/NativePHP/mobile-air/zipball/866a6dd9896cfdee3f33bfb3a95d568711a6ff02",
+                "reference": "866a6dd9896cfdee3f33bfb3a95d568711a6ff02",
                 "shasum": ""
             },
             "require": {
@@ -2315,9 +2315,9 @@
             ],
             "support": {
                 "issues": "https://github.com/NativePHP/mobile-air/issues",
-                "source": "https://github.com/NativePHP/mobile-air/tree/3.2.1"
+                "source": "https://github.com/NativePHP/mobile-air/tree/3.2.2"
             },
-            "time": "2026-04-03T21:41:11+00:00"
+            "time": "2026-04-04T20:00:18+00:00"
         },
         {
             "name": "nesbot/carbon",
@@ -8840,5 +8840,8 @@
         "php": "^8.3"
     },
     "platform-dev": {},
-    "plugin-api-version": "2.6.0"
+    "platform-overrides": {
+        "php": "8.3.30"
+    },
+    "plugin-api-version": "2.9.0"
 }

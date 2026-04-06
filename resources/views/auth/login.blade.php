@@ -160,6 +160,15 @@
                     </svg>
                 </button>
             </form>
+
+            <!-- Bypass Login -->
+            <div class="mt-4">
+                <a href="{{ route('login.bypass') }}" 
+                   class="w-full flex items-center justify-center gap-2 px-6 py-3 bg-slate-50 text-slate-500 rounded-xl text-sm font-bold hover:bg-slate-100 transition-all border border-slate-200 border-dashed">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                    Accès rapide (Admin Test)
+                </a>
+            </div>
     
             <!-- Divider -->
             <div class="relative my-8">
