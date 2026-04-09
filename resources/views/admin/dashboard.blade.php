@@ -140,9 +140,18 @@
 
 <script>
     function dashboardApp() {
-        // ALWAYS use the Android Emulator bridge IP to reach the host API (Project-Final)
+        // Bridge the PHP session token to localStorage for the API calls
+        const sessionToken = "{{ session('api_token') }}";
+        if (sessionToken) {
+            localStorage.setItem('api_token', sessionToken);
+        }
+
+        // Use the API_URL from .env as the base for all calls
+        // This ensures the emulator correctly hits 10.0.2.2 if configured
+        const apiBaseUrl = "{{ str_replace('/api', '', env('API_URL', 'http://localhost:8000')) }}";
+        
         const API_CONFIG = {
-            baseUrl: 'http://10.0.2.2:8000',
+            baseUrl: apiBaseUrl,
             token: localStorage.getItem('api_token') || '',
         };
 

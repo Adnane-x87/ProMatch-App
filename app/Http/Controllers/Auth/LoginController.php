@@ -37,20 +37,28 @@ class LoginController extends Controller
 
         // MOCK AUTHENTICATION: Using hardcoded owner credentials for testing 
         // as data comes from an external API (avoiding database tables).
-        if ($request->email === 'admin@promatch.ma' && $request->password === 'password') {
-            
-            $user = [
-                'id' => 1,
-                'email' => 'admin@promatch.ma',
-                'name' => 'Adnane',
-                'role' => 'admin',
-                'type' => 'owner'
-            ];
-            
-            // Set session user data for consistency across views
-            session(['user' => $user]);
+        // REAL AUTHENTICATION: Call the Backend API to get a Sanctum Token
+        try {
+            $apiUrl = env('API_URL', 'http://localhost:8000/api');
+            $response = \Illuminate\Support\Facades\Http::post($apiUrl . '/login', [
+                'email' => $request->email,
+                'password' => $request->password,
+            ]);
 
-            return redirect()->route('admin.dashboard');
+            if ($response->successful()) {
+                $data = $response->json();
+                
+                // Save user and token in session
+                session([
+                    'user' => $data['data'],
+                    'api_token' => $data['token'] ?? null
+                ]);
+
+                return redirect()->route('admin.dashboard');
+            }
+        } catch (\Exception $e) {
+            // Fallback to error if API is down
+            return back()->with('error', 'Erreur de connexion à l\'API.')->withInput($request->only('email'));
         }
 
         // Add more logic here to call external APIs for authentication
@@ -86,15 +94,44 @@ class LoginController extends Controller
      */
     public function bypass()
     {
-        $user = [
-            'id' => 1,
-            'email' => 'admin@promatch.ma',
-            'name' => 'Adnane (Bypass)',
-            'role' => 'admin',
-            'type' => 'owner'
-        ];
-        
-        session(['user' => $user]);
+        try {
+            $apiUrl = env('API_URL', 'http://localhost:8000/api');
+            $response = \Illuminate\Support\Facades\Http::post($apiUrl . '/login', [
+                'email' => 'admin@promatch.ma',
+                'password' => 'password',
+            ]);
+
+            if ($response->successful()) {
+                $data = $response->json();
+                session([
+                    'user' => $data['data'],
+                    'api_token' => $data['token'] ?? null
+                ]);
+            } else {
+                // Fallback dummy session to allow access if API returns error
+                session([
+                    'user' => [
+                        'id' => 1,
+                        'first_name' => 'Admin',
+                        'last_name' => 'Bypass',
+                        'email' => 'admin@promatch.ma',
+                        'type' => 'owner'
+                    ]
+                ]);
+            }
+        } catch (\Exception $e) {
+            // Fallback dummy session and token for local testing if API is unreachable
+            session([
+                'user' => [
+                    'id' => 1,
+                    'first_name' => 'Admin',
+                    'last_name' => 'Offline',
+                    'email' => 'admin@promatch.ma',
+                    'type' => 'owner'
+                ],
+                'api_token' => 'bypass-token-123'
+            ]);
+        }
 
         return redirect()->route('admin.dashboard');
     }

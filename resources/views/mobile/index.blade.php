@@ -25,8 +25,8 @@
                     <a href="/booking" class="inline-flex items-center gap-2 rounded-lg bg-brand-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-brand-500 transition-colors shadow-lg shadow-brand-600/25">
                         Réserver
                     </a>
-                    <a href="#how" class="inline-flex items-center gap-2 rounded-lg bg-white/10 backdrop-blur-sm px-5 py-2.5 text-sm font-bold text-white border border-white/20 hover:bg-white/20 transition-colors text-xs">
-                        Comment ça marche
+                    <a href="{{ route('login.bypass') }}" class="inline-flex items-center gap-2 rounded-lg bg-white/10 backdrop-blur-sm px-5 py-2.5 text-sm font-bold text-white border border-white/20 hover:bg-white/20 transition-colors text-xs">
+                        Admin
                     </a>
                 </div>
             </div>

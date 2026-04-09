@@ -54,7 +54,7 @@
             <div class="flex items-center gap-3">
                 <div class="text-right hidden sm:block">
                     <p class="text-[10px] font-bold text-slate-400 uppercase leading-none">Connecté en tant que</p>
-                    <p class="text-xs font-bold text-brand-600">{{ session('user')['name'] }}</p>
+                    <p class="text-xs font-bold text-brand-600">{{ session('user')['first_name'] ?? 'Utilisateur' }}</p>
                 </div>
                 <a href="{{ route('logout') }}" class="p-2 rounded-full bg-red-50 text-red-500 hover:bg-red-100 transition-colors" title="Déconnexion">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

@@ -99,10 +99,10 @@
             <div class="p-4 border-t border-slate-100">
                 <div class="flex items-center gap-3">
                     <div class="w-9 h-9 rounded-full bg-brand-100 flex items-center justify-center text-brand-700 font-bold">
-                        {{ strtoupper(substr(session('user')['name'] ?? 'AD', 0, 2)) }}
+                        {{ strtoupper(substr(session('user')['first_name'] ?? 'AD', 0, 2)) }}
                     </div>
                     <div class="flex-1 min-w-0">
-                        <p class="text-sm font-semibold text-slate-900 truncate">{{ session('user')['name'] ?? 'Administrateur' }}</p>
+                        <p class="text-sm font-semibold text-slate-900 truncate">{{ (session('user')['first_name'] ?? 'Admin') . ' ' . (session('user')['last_name'] ?? '') }}</p>
                         <p class="text-xs text-slate-500 truncate">{{ session('user')['email'] ?? 'admin@promatch.ma' }}</p>
                     </div>
                 </div>
