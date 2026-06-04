@@ -13,6 +13,8 @@ Route::get('/', function () {
 
 Route::get('/login', [LoginController::class, 'show'])->name('login');
 Route::post('/login', [LoginController::class, 'login']);
+Route::get('/register', [LoginController::class, 'showRegister'])->name('register');
+Route::post('/register', [LoginController::class, 'register']);
 Route::get('/login/bypass', [LoginController::class, 'bypass'])->name('login.bypass');
 Route::get('/logout', [LoginController::class, 'logout'])->name('logout');
 

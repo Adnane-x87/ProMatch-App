@@ -1,6 +1,8 @@
 @extends('layouts.mobile')
 
 @section('content')
+{{-- Pass the server-side token to JS safely via a meta tag --}}
+<meta name="api-token" content="{{ session('api_token') ?? '' }}">
 <div x-data="dashboardApp()" x-init="init()" class="pb-12" x-cloak>
     
     <!-- Header -->
@@ -140,19 +142,20 @@
 
 <script>
     function dashboardApp() {
-        // Bridge the PHP session token to localStorage for the API calls
-        const sessionToken = "{{ session('api_token') }}";
-        if (sessionToken) {
-            localStorage.setItem('api_token', sessionToken);
+        // Bridge the server-side session token to JS via a meta tag (avoids Blade escaping issues)
+        const metaToken = document.querySelector('meta[name="api-token"]')?.content || '';
+
+        if (metaToken) {
+            // Always refresh localStorage with the latest server-side token
+            localStorage.setItem('api_token', metaToken);
+        } else {
+            // No active session token — clear stale cache to avoid infinite 401 loops
+            localStorage.removeItem('api_token');
         }
 
-        // Use the API_URL from .env as the base for all calls
-        // This ensures the emulator correctly hits 10.0.2.2 if configured
-        const apiBaseUrl = "{{ str_replace('/api', '', env('API_URL', 'http://localhost:8000')) }}";
-        
         const API_CONFIG = {
-            baseUrl: apiBaseUrl,
-            token: localStorage.getItem('api_token') || '',
+            baseUrl: '',
+            token: metaToken || localStorage.getItem('api_token') || '',
         };
 
         return {
@@ -182,7 +185,8 @@
                     // STRICT API FETCH: No dummy data fallback
                     const res = await fetch(`${API_CONFIG.baseUrl}/api/planning?date=${today}&t=${timestamp}`, {
                         headers: headers,
-                        cache: 'no-store'
+                        cache: 'no-store',
+                        credentials: 'include'  // Always send session cookie
                     });
 
                     if (res.ok) {
@@ -272,7 +276,8 @@
                     const res = await fetch(`${API_CONFIG.baseUrl}/api/reservations/${id}/validate`, {
                         method: 'PUT',
                         headers: headers,
-                        body: JSON.stringify({ status: 'APPROVED' })
+                        body: JSON.stringify({ status: 'APPROVED' }),
+                        credentials: 'include'  // Always send session cookie
                     });
 
                     if (res.ok) {
@@ -293,4 +298,3 @@
     }
 </script>
 @endsection
-

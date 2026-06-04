@@ -25,9 +25,6 @@
                     <a href="/booking" class="inline-flex items-center gap-2 rounded-lg bg-brand-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-brand-500 transition-colors shadow-lg shadow-brand-600/25">
                         Réserver
                     </a>
-                    <a href="{{ route('login.bypass') }}" class="inline-flex items-center gap-2 rounded-lg bg-white/10 backdrop-blur-sm px-5 py-2.5 text-sm font-bold text-white border border-white/20 hover:bg-white/20 transition-colors text-xs">
-                        Admin
-                    </a>
                 </div>
             </div>
         </div>
@@ -175,15 +172,17 @@
                 this.error = null;
                 
                 const timestamp = new Date().getTime();
-                // Pass current search query to the API
-                const url = `http://10.0.2.2:8000/api/public-fields?query=${encodeURIComponent(this.q)}&t=${timestamp}`;
+                const url = `/api/public-fields?query=${encodeURIComponent(this.q)}&t=${timestamp}`;
                 
                 fetch(url, { cache: 'no-store' })
-                    .then(response => {
+                    .then(async response => {
+                        const data = await response.json().catch(() => null);
+
                         if (!response.ok) {
-                            throw new Error('Erreur HTTP ' + response.status);
+                            throw new Error((data && (data.detail || data.message)) || ('Erreur HTTP ' + response.status));
                         }
-                        return response.json();
+
+                        return data;
                     })
                     .then(data => {
                         if (data && data.success === true && data.data) {
@@ -195,14 +194,16 @@
                         this.loading = false;
                         
                         if (!this.fields || this.fields.length === 0) {
-                            this.errorTitle = "Le serveur a répondu, mais sans données !";
-                            this.error = "Réponse brute : " + JSON.stringify(data);
+                            this.errorTitle = "Aucun terrain trouve";
+                            this.error = this.q
+                                ? "Aucun terrain ne correspond a votre recherche."
+                                : "Aucun terrain n'est encore disponible.";
                         }
                     })
                     .catch(error => {
                         console.error('Erreur:', error);
                         this.loading = false;
-                        this.errorTitle = "Erreur de connexion pure";
+                        this.errorTitle = "Erreur de connexion";
                         this.error = error.message;
                     });
             }

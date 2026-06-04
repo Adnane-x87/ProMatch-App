@@ -2,7 +2,7 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="h-full">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0, viewport-fit=cover">
     <meta name="theme-color" content="#2563eb">
     <title>{{ config('app.name', 'ProMatch') }}</title>
 
@@ -33,6 +33,16 @@
             box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.15);
         }
 
+        .safe-pt-header {
+            padding-top: calc(env(safe-area-inset-top, 0px) + 1rem) !important;
+            padding-bottom: 1rem !important;
+        }
+        .safe-pt-main {
+            padding-top: calc(env(safe-area-inset-top, 0px) + 6.5rem) !important;
+        }
+        .safe-bottom-nav {
+            bottom: calc(env(safe-area-inset-bottom, 0px) + 1.5rem) !important;
+        }
         .safe-pb { padding-bottom: env(safe-area-inset-bottom, 1.5rem); }
         .gradient-bg {
             background: radial-gradient(circle at top right, rgba(37, 99, 235, 0.15), transparent),
@@ -43,7 +53,7 @@
 </head>
 <body class="bg-[#F8FAFC] dark:bg-[#020617] text-[#1e293b] dark:text-[#f1f5f9] h-full gradient-bg overflow-x-hidden antialiased">
     <!-- Top Header -->
-    <header class="fixed top-0 left-0 right-0 z-50 glass shadow-sm px-6 py-4 flex items-center justify-between backdrop-blur-xl border-b border-brand-100/20">
+    <header class="fixed top-0 left-0 right-0 z-50 glass shadow-sm px-6 safe-pt-header flex items-center justify-between backdrop-blur-xl border-b border-brand-100/20">
         <div class="flex items-center gap-2">
             <div class="w-10 h-10 bg-gradient-to-tr from-brand-600 to-brand-400 rounded-xl flex items-center justify-center shadow-lg shadow-brand-600/20">
                 <span class="text-white font-bold text-xl uppercase italic">P</span>
@@ -51,13 +61,23 @@
             <h1 class="text-xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-brand-700 to-brand-500">ProMatch</h1>
         </div>
         @if(session()->has('user'))
-            <div class="flex items-center gap-3">
-                <div class="text-right hidden sm:block">
-                    <p class="text-[10px] font-bold text-slate-400 uppercase leading-none">Connecté en tant que</p>
-                    <p class="text-xs font-bold text-brand-600">{{ session('user')['first_name'] ?? 'Utilisateur' }}</p>
+            <div class="flex items-center gap-2">
+                <div class="text-right mr-1">
+                    <p class="text-[9px] font-bold text-slate-400 uppercase leading-none">Connecté</p>
+                    <p class="text-[11px] font-bold text-brand-600">
+                        {{ session('user')['first_name'] ?? 'Utilisateur' }}
+                        @if(session('user')['type'] === 'owner')
+                            <span class="text-[8px] uppercase tracking-wider bg-brand-100 text-brand-700 px-1 py-0.5 rounded font-black ml-0.5">Admin</span>
+                        @endif
+                    </p>
                 </div>
+                @if(session('user')['type'] === 'owner' && !request()->is('admin*'))
+                    <a href="{{ route('admin.dashboard') }}" class="px-2.5 py-1.5 bg-brand-600 hover:bg-brand-700 text-white text-[10px] font-bold rounded-lg transition-all shadow-sm">
+                        Dashboard
+                    </a>
+                @endif
                 <a href="{{ route('logout') }}" class="p-2 rounded-full bg-red-50 text-red-500 hover:bg-red-100 transition-colors" title="Déconnexion">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-6 0v-1m6-10V5a3 3 0 01-6 0v1m6 0H9" />
                     </svg>
                 </a>
@@ -73,13 +93,13 @@
     </header>
 
     <!-- Main Content Area -->
-    <main class="pt-24 pb-36 px-5 min-h-full">
+    <main class="safe-pt-main pb-36 px-5 min-h-full">
         @yield('content')
     </main>
 
     <!-- Bottom Floating Navigation -->
     <nav x-data="{ currentPath: window.location.pathname }" 
-         class="fixed bottom-6 left-5 right-5 z-50 bg-slate-900/95 backdrop-blur-2xl rounded-2xl border border-white/10 px-4 py-3 shadow-2xl safe-pb shadow-slate-900/40 translate-z-0">
+         class="fixed safe-bottom-nav left-5 right-5 z-50 bg-slate-900/95 backdrop-blur-2xl rounded-2xl border border-white/10 px-4 py-3 shadow-2xl safe-pb shadow-slate-900/40 translate-z-0">
         <div class="flex items-center justify-between max-w-lg mx-auto relative h-12">
             
             <!-- Accueil -->

@@ -88,38 +88,52 @@
                     class="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none mb-3 transition-all">
 
                 <!-- CNI Upload -->
-                <div class="mt-4">
-                    <label class="relative border-2 border-dashed border-slate-300 rounded-xl p-6 flex flex-col items-center justify-center cursor-pointer hover:border-brand-500 transition-all bg-white overflow-hidden block"
-                         :class="cniPreview ? 'border-brand-500 bg-brand-50' : ''">
+                <template x-if="isCniAlreadyValid">
+                    <div class="mt-4 p-4 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/50 rounded-xl flex items-center gap-3">
+                        <svg class="h-5 w-5 text-emerald-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                        </svg>
+                        <div>
+                            <p class="text-xs text-emerald-800 dark:text-emerald-400 font-bold">CNI vérifiée</p>
+                            <p class="text-[10px] text-emerald-600 dark:text-emerald-500 font-medium">Votre carte d'identité a déjà été validée. Pas besoin de la recharger.</p>
+                        </div>
+                    </div>
+                </template>
+                
+                <template x-if="!isCniAlreadyValid">
+                    <div class="mt-4">
+                        <label class="relative border-2 border-dashed border-slate-300 rounded-xl p-6 flex flex-col items-center justify-center cursor-pointer hover:border-brand-500 transition-all bg-white overflow-hidden block"
+                             :class="cniPreview ? 'border-brand-500 bg-brand-50' : ''">
 
-                        <input type="file" 
-                               accept="image/*" 
-                               capture="environment" 
-                               class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" 
-                               @change="handleFileUpload">
+                            <input type="file" 
+                                   accept="image/*" 
+                                   capture="environment" 
+                                   class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" 
+                                   @change="handleFileUpload">
 
-                        <template x-if="!cniPreview">
-                            <div class="text-center pointer-events-none">
-                                <svg class="w-8 h-8 text-slate-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                </svg>
-                                <p class="text-sm text-slate-500">Ajouter votre CNI <span class="text-brand-600 font-bold">cliquez ici</span></p>
-                            </div>
-                        </template>
+                            <template x-if="!cniPreview">
+                                <div class="text-center pointer-events-none">
+                                    <svg class="w-8 h-8 text-slate-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                    </svg>
+                                    <p class="text-sm text-slate-500">Ajouter votre CNI <span class="text-brand-600 font-bold">cliquez ici</span></p>
+                                </div>
+                            </template>
 
-                        <template x-if="cniPreview">
-                            <div class="text-center pointer-events-none">
-                                <img :src="cniPreview" class="max-h-32 mx-auto rounded-lg shadow-sm border border-brand-200">
-                                <p class="text-xs text-emerald-600 mt-2 font-bold">Image sélectionnée avec succès !</p>
-                                <button type="button" @click.stop="cniPreview = null; cniFile = null; formData.cni_image_base64 = ''" 
-                                        class="absolute -top-2 -right-2 bg-white text-red-500 rounded-full p-1.5 shadow-md border border-slate-100 hover:bg-red-50 transition-colors">
-                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"/></svg>
-                                </button>
-                            </div>
-                        </template>
-                    </label>
-                </div>
-                <p class="text-xs text-slate-400 mt-2">La CNI est requise pour valider votre réservation</p>
+                            <template x-if="cniPreview">
+                                <div class="text-center pointer-events-none">
+                                    <img :src="cniPreview" class="max-h-32 mx-auto rounded-lg shadow-sm border border-brand-200">
+                                    <p class="text-xs text-emerald-600 mt-2 font-bold">Image sélectionnée avec succès !</p>
+                                    <button type="button" @click.stop="cniPreview = null; cniFile = null; formData.cni_image_base64 = ''" 
+                                            class="absolute -top-2 -right-2 bg-white text-red-500 rounded-full p-1.5 shadow-md border border-slate-100 hover:bg-red-50 transition-colors">
+                                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"/></svg>
+                                    </button>
+                                </div>
+                            </template>
+                        </label>
+                    </div>
+                </template>
+                <p class="text-xs text-slate-400 mt-2" x-show="!isCniAlreadyValid">La CNI est requise pour valider votre réservation</p>
             </div>
 
             <!-- Total & Submit -->
@@ -136,7 +150,7 @@
                     <span x-show="submitting" class="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full font-bold uppercase tracking-widest text-[10px]"></span>
                     <span x-text="submitting ? 'Envoi...' : 'Envoyer la demande'"></span>
                 </button>
-                <p x-show="!isFormValid" class="text-[10px] text-red-500 text-center mt-2 font-medium">Veuillez remplir tous les champs et ajouter votre CNI.</p>
+                <p x-show="!isFormValid" class="text-[10px] text-red-500 text-center mt-2 font-medium">Veuillez remplir tous les champs<span x-show="!isCniAlreadyValid"> et ajouter votre CNI</span>.</p>
                 <p class="text-xs text-slate-400 text-center mt-3">Paiement sur place • Confirmation sous 24h</p>
             </div>
         </div>
@@ -183,11 +197,9 @@
 <script>
     function bookingApp() {
         // --- Configuration ---
-        // NativePHP serves via an internal localhost WebView, but on Android
-        // the actual host machine (where Laravel runs) is always 10.0.2.2
         const API_CONFIG = {
-            baseUrl: 'http://10.0.2.2:8000',
-            token: localStorage.getItem('api_token') || '',
+            baseUrl: '',
+            token: "{{ session('api_token', '') }}",
         };
 
         return {
@@ -198,6 +210,7 @@
             submitting: false,
             showSuccess: false,
             error: null, // Error state for UI feedback
+            isCniAlreadyValid: {{ session('user.tenant.is_cni_valid', false) ? 'true' : 'false' }},
             cniPreview: null,
             cniFile: null, // 👈 Added to store the actual file object
             formData: {
@@ -205,10 +218,10 @@
                 date: '',
                 time_slot_id: '',
                 selected_time: '',
-                first_name: '',
-                last_name: '',
-                phone: '',
-                email: '',
+                first_name: "{{ session('user.first_name', '') }}",
+                last_name: "{{ session('user.last_name', '') }}",
+                phone: "{{ session('user.phone', '') }}",
+                email: "{{ session('user.email', '') }}",
                 cni_image_base64: ''
             },
             
@@ -324,7 +337,7 @@
                        this.formData.last_name && 
                        this.formData.phone && 
                        this.formData.email && 
-                       this.cniFile; // 👈 Check for the actual file
+                       (this.isCniAlreadyValid || this.cniFile);
             },
 
             get totalPrice() {
