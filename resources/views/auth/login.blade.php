@@ -42,11 +42,7 @@
 <div class="login-container px-6 py-12" x-data="loginForm(@js(old('email', '')))">
     <!-- Logo & Brand -->
     <div class="mb-10 text-center">
-        <div class="w-20 h-20 bg-gradient-to-tr from-brand-600 to-brand-400 rounded-3xl flex items-center justify-center shadow-2xl shadow-brand-600/30 mx-auto mb-6 transform rotate-12 logo-animation">
-            <span class="text-white font-black text-4xl uppercase italic">P</span>
-        </div>
-        <h1 class="text-3xl font-black tracking-tight text-slate-900 dark:text-white mb-2">ProMatch</h1>
-        <p class="text-slate-500 dark:text-slate-400 font-medium tracking-wide">Gestion de l'Administration</p>
+        <img src="/images/logo.png" alt="ProMatch Logo" class="h-16 w-auto mx-auto mb-4 logo-animation dark:brightness-150">
     </div>
 
     <!-- Login Card -->
@@ -67,9 +63,9 @@
             </div>
         @endif
 
-        @if($errors->any())
+        @if($errors->any() && !($errors->has('email') || $errors->has('password')))
             <div class="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800/50 rounded-2xl">
-                <ul class="list-disc list-inside text-xs text-red-600 dark:text-red-400 font-bold">
+                <ul class="space-y-1 text-xs text-red-600 dark:text-red-400 font-bold">
                     @foreach($errors->all() as $error)
                         <li>{{ $error }}</li>
                     @endforeach
@@ -77,13 +73,13 @@
             </div>
         @endif
 
-        <template x-if="error">
+        <template x-if="submitError">
             <div class="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800/50 rounded-2xl">
-                <p class="text-xs text-red-600 dark:text-red-400 font-bold" x-text="error"></p>
+                <p class="text-xs text-red-600 dark:text-red-400 font-bold" x-text="submitError"></p>
             </div>
         </template>
 
-        <form method="POST" action="{{ route('login') }}" class="space-y-6" @submit.prevent="submit($event)">
+        <form method="POST" action="{{ route('login') }}" class="space-y-6" novalidate @submit.prevent="submit($event)">
             @csrf
 
             <!-- Email Input -->
@@ -93,8 +89,14 @@
                     <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-brand-500 transition-colors">
                         <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207"></path></svg>
                     </div>
-                    <input type="email" name="email" x-model="email" placeholder="Entrez votre email" autocomplete="email" required autofocus class="w-full pl-11 pr-4 py-4 bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-700/50 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium text-slate-900 dark:text-white">
+                    <input type="email" name="email" x-model="email" placeholder="Entrez votre email" autocomplete="email" autofocus aria-invalid="{{ $errors->has('email') ? 'true' : 'false' }}" class="w-full pl-11 pr-4 py-4 bg-slate-50 dark:bg-slate-800/40 border {{ $errors->has('email') ? 'border-red-300 focus:border-red-500 focus:ring-red-500/20' : 'border-slate-100 dark:border-slate-700/50 focus:border-brand-500 focus:ring-brand-500/20' }} rounded-2xl text-sm focus:outline-none focus:ring-2 transition-all font-medium text-slate-900 dark:text-white">
                 </div>
+                <template x-if="submitted && !email.trim()">
+                    <p class="ml-1 text-xs font-bold text-red-600 dark:text-red-400">Entrez votre email.</p>
+                </template>
+                @error('email')
+                    <p class="ml-1 text-xs font-bold text-red-600 dark:text-red-400">{{ $message }}</p>
+                @enderror
             </div>
 
             <!-- Password Input -->
@@ -104,30 +106,23 @@
                     <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-brand-500 transition-colors">
                         <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
                     </div>
-                    <input type="password" name="password" x-model="password" placeholder="Entrez votre mot de passe" autocomplete="current-password" required class="w-full pl-11 pr-4 py-4 bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-700/50 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium text-slate-900 dark:text-white">
+                    <input type="password" name="password" x-model="password" placeholder="Entrez votre mot de passe" autocomplete="current-password" aria-invalid="{{ $errors->has('password') ? 'true' : 'false' }}" class="w-full pl-11 pr-4 py-4 bg-slate-50 dark:bg-slate-800/40 border {{ $errors->has('password') ? 'border-red-300 focus:border-red-500 focus:ring-red-500/20' : 'border-slate-100 dark:border-slate-700/50 focus:border-brand-500 focus:ring-brand-500/20' }} rounded-2xl text-sm focus:outline-none focus:ring-2 transition-all font-medium text-slate-900 dark:text-white">
                 </div>
+                <template x-if="submitted && !password">
+                    <p class="ml-1 text-xs font-bold text-red-600 dark:text-red-400">Entrez votre mot de passe.</p>
+                </template>
+                @error('password')
+                    <p class="ml-1 text-xs font-bold text-red-600 dark:text-red-400">{{ $message }}</p>
+                @enderror
             </div>
 
             <!-- Buttons Wrapper -->
             <div class="pt-4 space-y-4">
                 <!-- Login Button -->
-                <button type="submit" :disabled="submitting" class="w-full py-4 bg-gradient-to-r from-brand-600 to-brand-500 text-white rounded-2xl text-sm font-bold shadow-xl shadow-brand-600/30 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 group cursor-pointer disabled:opacity-60">
-                    <span x-text="submitting ? 'Connexion...' : 'Se connecter'"></span>
+                <button type="submit" :disabled="submitting" class="w-full py-4 bg-gradient-to-r from-brand-600 to-brand-500 text-white rounded-2xl text-sm font-bold shadow-xl shadow-brand-600/30 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 group cursor-pointer disabled:opacity-55 disabled:shadow-none disabled:hover:scale-100 disabled:cursor-not-allowed">
+                    <span x-text="submitting ? 'Connexion...' : 'Se connecter'">Se connecter</span>
                     <svg class="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
                 </button>
-
-                <!-- Separator -->
-                <div class="relative flex items-center py-2">
-                    <div class="flex-grow border-t border-slate-200 dark:border-slate-700"></div>
-                    <span class="flex-shrink mx-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Accès Direct</span>
-                    <div class="flex-grow border-t border-slate-200 dark:border-slate-700"></div>
-                </div>
-
-                <!-- Secondary Accès Rapide button -->
-                <a href="{{ route('login.bypass') }}" class="w-full py-4 bg-white dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded-2xl text-sm font-bold hover:bg-slate-50 dark:hover:bg-slate-700 transition-all flex items-center justify-center gap-2 shadow-sm">
-                    <svg class="w-4 h-4 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-                    Accès Rapide Admin
-                </a>
             </div>
         </form>
 
@@ -149,47 +144,52 @@
         return {
             email: initialEmail || '',
             password: '',
-            error: '',
+            submitted: false,
             submitting: false,
+            submitError: '',
 
             async submit(event) {
-                this.error = '';
+                this.submitted = true;
+                this.submitError = '';
+
+                const email = this.email.trim();
+                const password = this.password;
+
+                console.log('LOGIN DATA BEFORE SEND', { email, password });
+
+                if (!email || !password) {
+                    return;
+                }
+
                 this.submitting = true;
 
                 try {
-                    const form = event.target;
-                    const email = form.elements.email.value.trim();
-                    const password = form.elements.password.value;
-                    const token = form.elements._token.value;
-
-                    this.email = email;
-                    this.password = password;
-
-                    const response = await fetch(form.action, {
+                    const response = await fetch(event.target.action, {
                         method: 'POST',
                         credentials: 'same-origin',
-                        body: JSON.stringify({
-                            _token: token,
-                            email: email,
-                            password: password,
-                        }),
                         headers: {
                             'Accept': 'application/json',
                             'Content-Type': 'application/json',
                             'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRF-TOKEN': event.target.elements._token.value,
                         },
+                        body: JSON.stringify({
+                            email: email,
+                            password: password,
+                        }),
                     });
 
                     const data = await response.json().catch(() => ({}));
 
                     if (!response.ok) {
                         const errors = data.errors ? Object.values(data.errors).flat() : [];
-                        throw new Error(errors[0] || data.message || 'Connexion impossible.');
+                        this.submitError = errors[0] || data.message || 'Connexion impossible.';
+                        return;
                     }
 
                     window.location.href = data.redirect || '/';
                 } catch (error) {
-                    this.error = error.message;
+                    this.submitError = 'API indisponible. Vérifiez que le serveur ProMatch est lancé.';
                 } finally {
                     this.submitting = false;
                 }
@@ -197,4 +197,6 @@
         };
     }
 </script>
+
 @endsection
+

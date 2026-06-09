@@ -3,7 +3,7 @@
 @section('content')
 <style>
     .hero-bg {
-        background-image: linear-gradient(rgba(15, 23, 42, 0.6), rgba(15, 23, 42, 0.6)), url('/images/hero-bg.jpg');
+        background-image: linear-gradient(rgba(15, 23, 42, 0.6), rgba(15, 23, 42, 0.6)), url('/images/hero-bg.png');
         background-size: cover;
         background-position: center;
     }
@@ -80,18 +80,19 @@
         <div class="grid gap-6 grid-cols-1" x-show="!loading && !error">
             <template x-for="field in fields" :key="field.id">
                 <article class="group bg-white rounded-2xl border border-slate-200 overflow-hidden hover-lift shadow-sm">
-                    <div class="h-44 bg-gradient-to-br from-slate-100 to-slate-50 flex items-center justify-center relative">
-                        <span class="absolute top-3 right-3 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-600 text-[10px] font-bold border border-emerald-100">
+                    <div class="h-36 overflow-hidden relative">
+                        <span class="absolute top-3 right-3 px-2.5 py-1 rounded-full bg-emerald-50/90 backdrop-blur-sm text-emerald-600 text-[10px] font-bold border border-emerald-100 z-10">
                             Disponible
                         </span>
-                        <svg class="w-16 h-16 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
-                        </svg>
+                        <img :src="'/images/field_' + field.id + '.jpg'" 
+                             :alt="field.name" 
+                             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                             x-on:error="$event.target.src = field.image_url || '/images/hero-bg.png'">
                     </div>
                     <div class="p-5">
                         <div class="flex justify-between items-start mb-2">
                             <h3 class="text-lg font-bold text-slate-900" x-text="field.name"></h3>
-                            <span class="text-[10px] font-bold text-slate-400 uppercase">5vs5</span>
+                            
                         </div>
                         <p class="text-sm text-slate-500 mb-4 line-clamp-2" x-text="field.description"></p>
                         <div class="flex items-center justify-between pt-4 border-t border-slate-100">
@@ -201,7 +202,6 @@
                         }
                     })
                     .catch(error => {
-                        console.error('Erreur:', error);
                         this.loading = false;
                         this.errorTitle = "Erreur de connexion";
                         this.error = error.message;
@@ -211,3 +211,4 @@
     }
 </script>
 @endsection
+

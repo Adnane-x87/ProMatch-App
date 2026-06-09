@@ -47,10 +47,7 @@
 <div class="register-container px-6 py-12" x-data="registerApp()">
     <!-- Logo & Brand -->
     <div class="mb-6 text-center">
-        <div class="w-16 h-16 bg-gradient-to-tr from-brand-600 to-brand-400 rounded-2xl flex items-center justify-center shadow-xl shadow-brand-600/30 mx-auto mb-4 transform rotate-12 logo-animation">
-            <span class="text-white font-black text-3xl uppercase italic">P</span>
-        </div>
-        <h1 class="text-2xl font-black tracking-tight text-slate-900 dark:text-white mb-1">Créer un compte</h1>
+        <img src="/images/logo.png" alt="ProMatch Logo" class="h-16 w-auto mx-auto mb-4 logo-animation dark:brightness-150">
         <p class="text-slate-500 dark:text-slate-400 text-xs font-medium tracking-wide">Rejoignez la plateforme ProMatch</p>
     </div>
 
@@ -233,6 +230,7 @@
                             email: value('email').trim(),
                             phone: value('phone').trim(),
                             type: value('type') || this.role,
+                            role: value('type') || this.role,
                             password: value('password'),
                             password_confirmation: value('password_confirmation'),
                         }),
@@ -247,7 +245,7 @@
 
                     if (!response.ok) {
                         const errors = data.errors ? Object.values(data.errors).flat() : [];
-                        throw new Error(errors[0] || data.message || 'Creation du compte impossible.');
+                        throw new Error(errors[0] || data.message || 'Création du compte impossible.');
                     }
 
                     window.location.href = data.redirect || '/';
@@ -261,3 +259,4 @@
     }
 </script>
 @endsection
+

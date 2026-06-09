@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Route;
 
 class LoginController extends Controller
 {
@@ -15,10 +16,9 @@ class LoginController extends Controller
     public function show()
     {
         if (session()->has('user')) {
-             return session('user')['type'] === 'owner' 
-                ? redirect()->route('admin.dashboard') 
-                : redirect()->route('index');
+            return redirect()->route($this->homeRouteForType(session('user.type')));
         }
+
         return view('auth.login');
     }
 
@@ -27,80 +27,70 @@ class LoginController extends Controller
      */
     public function login(Request $request)
     {
-        Log::info('Login request details:', [
-            'method' => $request->method(),
-            'url' => $request->fullUrl(),
+        Log::info('LOGIN REQUEST', [
             'email' => $request->input('email'),
+            'password_present' => $request->filled('password'),
+            'password_length' => strlen((string) $request->input('password')),
         ]);
 
-        $request->validate([
+        $validated = $request->validate([
             'email' => ['required', 'email'],
             'password' => ['required'],
         ], [
-            'email.required' => 'Email est requis.',
-            'email.email' => 'Veuillez entrer une adresse email valide.',
-            'password.required' => 'Mot de passe est requis.',
+            'email.required' => 'Entrez votre email.',
+            'email.email' => 'Entrez un email valide.',
+            'password.required' => 'Entrez votre mot de passe.',
         ]);
 
         try {
             $apiUrl = $this->apiUrl($request);
-            Log::info('Sending POST to API URL: ' . $apiUrl . '/login');
 
-            $response = Http::timeout(15)->acceptJson()->post($apiUrl . '/login', [
-                'email'    => $request->email,
-                'password' => $request->password,
-            ]);
+            $credentials = [
+                'email' => trim((string) $validated['email']),
+                'password' => (string) $validated['password'],
+            ];
 
-            Log::info('API response received.', [
-                'status' => $response->status(),
-                'body'   => $response->body()
-            ]);
+            $response = Http::timeout(15)
+                ->acceptJson()
+                ->post($apiUrl . '/login', $credentials);
 
             if ($response->successful()) {
                 $data = $response->json();
-                $userData = $this->normalizeApiUser($data['data'] ?? []);
+                $userData = $this->normalizeApiUser($data['data']['user'] ?? $data['user'] ?? $data['data'] ?? []);
 
                 $apiToken = $data['token'] ?? $data['access_token'] ?? null;
 
                 session([
-                    'user'      => $userData,
+                    'user' => $userData,
                     'api_token' => $apiToken,
                 ]);
                 session()->save();
 
-                Log::info('Session saved. type=' . $userData['type'] . ' user=' . ($userData['email'] ?? '?'));
-
-                if ($userData['type'] === 'owner') {
-                    Log::info('Redirecting to admin.dashboard');
-                    if ($request->expectsJson()) {
-                        return response()->json(['redirect' => route('admin.dashboard')]);
-                    }
-                    return redirect()->route('admin.dashboard');
-                }
-
-                Log::info('Redirecting to index');
-                if ($request->expectsJson()) {
-                    return response()->json(['redirect' => route('index')]);
-                }
-                return redirect()->route('index');
-
-            } else {
-                $message = $this->apiErrorMessage($response, 'Identifiants incorrects.');
-                Log::warning('API login failed: ' . $message);
-                if ($request->expectsJson()) {
-                    return response()->json(['message' => $message], $response->status());
-                }
-                return back()->with('error', $message)->withInput($request->only('email'));
+                return $this->redirectForUser($request, $userData);
             }
-        } catch (\Exception $e) {
-            Log::error('API login exception: ' . $e->getMessage());
+
+            $message = $this->apiErrorMessage($response, 'Identifiants incorrects.');
+
             if ($request->expectsJson()) {
-                return response()->json(['message' => 'Erreur de connexion : ' . $e->getMessage()], 502);
+                return response()->json([
+                    'message' => $message,
+                    'errors' => $this->apiValidationErrors($response),
+                ], $response->status());
             }
-            return back()->with('error', 'Erreur de connexion : ' . $e->getMessage())->withInput($request->only('email'));
+
+            return back()
+                ->withErrors($this->apiValidationErrors($response) ?: ['email' => $message])
+                ->withInput($request->only('email'));
+        } catch (\Exception $e) {
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'API indisponible. Vérifiez que le serveur ProMatch est lancé.'], 502);
+            }
+
+            return back()
+                ->with('error', 'API indisponible. Vérifiez que le serveur ProMatch est lancé.')
+                ->withInput($request->only('email'));
         }
     }
-
 
     /**
      * Show the registration form.
@@ -108,10 +98,9 @@ class LoginController extends Controller
     public function showRegister()
     {
         if (session()->has('user')) {
-             return session('user')['type'] === 'owner' 
-                ? redirect()->route('admin.dashboard') 
-                : redirect()->route('index');
+            return redirect()->route($this->homeRouteForType(session('user.type')));
         }
+
         return view('auth.register');
     }
 
@@ -141,20 +130,19 @@ class LoginController extends Controller
 
         try {
             $apiUrl = $this->apiUrl($request);
-            
-            // Post registration request to backend API
+
             $response = Http::timeout(10)->acceptJson()->post($apiUrl . '/register', [
                 'first_name' => $request->first_name,
                 'last_name' => $request->last_name,
                 'email' => $request->email,
                 'phone' => $request->phone,
                 'password' => $request->password,
+                'password_confirmation' => $request->password_confirmation,
                 'type' => $request->type,
                 'role' => $request->type,
             ]);
 
             if ($response->successful()) {
-                // Automatically log the user in after registration
                 $loginResponse = Http::timeout(10)->acceptJson()->post($apiUrl . '/login', [
                     'email' => $request->email,
                     'password' => $request->password,
@@ -162,46 +150,44 @@ class LoginController extends Controller
 
                 if ($loginResponse->successful()) {
                     $loginData = $loginResponse->json();
-                    $userData = $this->normalizeApiUser($loginData['data'] ?? [], $request->type);
+                    $userData = $this->normalizeApiUser($loginData['data']['user'] ?? $loginData['user'] ?? $loginData['data'] ?? [], $request->type);
                     $apiToken = $loginData['token'] ?? $loginData['access_token'] ?? null;
 
                     session([
                         'user' => $userData,
-                        'api_token' => $apiToken
+                        'api_token' => $apiToken,
                     ]);
 
-                    if ($userData['type'] === 'owner') {
-                        if ($request->expectsJson()) {
-                            return response()->json(['redirect' => route('admin.dashboard')], 201);
-                        }
-                        return redirect()->route('admin.dashboard');
-                    }
-                    if ($request->expectsJson()) {
-                        return response()->json(['redirect' => route('index')], 201);
-                    }
-                    return redirect()->route('index');
+                    return $this->redirectForUser($request, $userData, 201);
                 }
 
                 if ($request->expectsJson()) {
                     return response()->json([
-                        'message' => 'Votre compte a ete cree. Veuillez vous connecter.',
+                        'message' => 'Votre compte a été créé. Veuillez vous connecter.',
                         'redirect' => route('login'),
                     ], 201);
                 }
 
                 return redirect()->route('login')->with('success', 'Votre compte a été créé. Veuillez vous connecter.');
-            } else {
-                $message = $this->apiErrorMessage($response, 'Erreur lors de l\'inscription.');
-                if ($request->expectsJson()) {
-                    return response()->json(['message' => $message], $response->status());
-                }
-                return back()->with('error', $message)->withInput($request->except('password', 'password_confirmation'));
             }
+
+            $message = $this->apiErrorMessage($response, 'Erreur lors de l\'inscription.');
+
+            if ($request->expectsJson()) {
+                return response()->json(['message' => $message], $response->status());
+            }
+
+            return back()
+                ->with('error', $message)
+                ->withInput($request->except('password', 'password_confirmation'));
         } catch (\Exception $e) {
             if ($request->expectsJson()) {
-                return response()->json(['message' => 'Erreur de connexion a l\'API : ' . $e->getMessage()], 502);
+                return response()->json(['message' => 'API indisponible. Vérifiez que le serveur ProMatch est lancé.'], 502);
             }
-            return back()->with('error', 'Erreur de connexion à l\'API : ' . $e->getMessage())->withInput($request->except('password', 'password_confirmation'));
+
+            return back()
+                ->with('error', 'API indisponible. Vérifiez que le serveur ProMatch est lancé.')
+                ->withInput($request->except('password', 'password_confirmation'));
         }
     }
 
@@ -211,12 +197,13 @@ class LoginController extends Controller
     public function logout(Request $request)
     {
         $token = session('api_token');
+
         if ($token) {
             try {
                 $apiUrl = $this->apiUrl($request);
                 Http::timeout(10)->withToken($token)->post($apiUrl . '/logout');
             } catch (\Exception $e) {
-                // Ignore API failure on logout, proceed to local session clear
+                // Ignore API failure on logout, proceed to local session clear.
             }
         }
 
@@ -224,59 +211,9 @@ class LoginController extends Controller
         $request->session()->regenerateToken();
         session()->forget('user');
         session()->forget('api_token');
-        
+
         return redirect()->route('index');
     }
-
-    /**
-     * Bypass login for testing (Owner Access).
-     */
-    public function bypass()
-    {
-        try {
-            $apiUrl = $this->apiUrl(request());
-            $response = Http::timeout(10)->acceptJson()->post($apiUrl . '/login', [
-                'email' => 'adnane@promatch.com',
-                'password' => 'password',
-            ]);
-
-            if ($response->successful()) {
-                $data = $response->json();
-                $apiToken = $data['token'] ?? $data['access_token'] ?? null;
-
-                session([
-                    'user' => $data['data'],
-                    'api_token' => $apiToken
-                ]);
-            } else {
-                // Fallback dummy session to allow access if API returns error
-                session([
-                    'user' => [
-                        'id' => 1,
-                        'first_name' => 'Admin',
-                        'last_name' => 'Bypass',
-                        'email' => 'adnane@promatch.com',
-                        'type' => 'owner'
-                    ]
-                ]);
-            }
-        } catch (\Exception $e) {
-            // Fallback dummy session and token for local testing if API is unreachable
-            session([
-                'user' => [
-                    'id' => 1,
-                    'first_name' => 'Admin',
-                    'last_name' => 'Offline',
-                    'email' => 'adnane@promatch.com',
-                    'type' => 'owner'
-                ],
-                'api_token' => 'bypass-token-123'
-            ]);
-        }
-
-        return redirect()->route('admin.dashboard');
-    }
-
 
     private function apiErrorMessage($response, string $fallback): string
     {
@@ -290,6 +227,35 @@ class LoginController extends Controller
         $details = $body !== '' ? ' - ' . mb_substr($body, 0, 180) : '';
 
         return $fallback . ' (API HTTP ' . $response->status() . $details . ')';
+    }
+
+    private function apiValidationErrors($response): array
+    {
+        $errorData = $response->json();
+
+        return is_array($errorData) && is_array($errorData['errors'] ?? null)
+            ? $errorData['errors']
+            : [];
+    }
+
+    private function redirectForUser(Request $request, array $userData, int $status = 200)
+    {
+        $route = $this->homeRouteForType($userData['type'] ?? null);
+
+        if ($request->expectsJson()) {
+            return response()->json(['redirect' => route($route)], $status);
+        }
+
+        return redirect()->route($route);
+    }
+
+    private function homeRouteForType(?string $type): string
+    {
+        return match ($type) {
+            'owner' => 'admin.dashboard',
+            'employee' => Route::has('employee.dashboard') ? 'employee.dashboard' : 'index',
+            default => 'index',
+        };
     }
 
     private function normalizeApiUser(array $userData, ?string $fallbackType = null): array

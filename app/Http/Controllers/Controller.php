@@ -3,9 +3,9 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Client\Response as ClientResponse;
-use Illuminate\Support\Facades\Http;
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 use Throwable;
 
 abstract class Controller
@@ -13,22 +13,20 @@ abstract class Controller
     protected function apiUrl(Request $request = null): string
     {
         $request = $request ?? request();
-        // Accept API_URL as either:
-        // - full API path:  http://host:port/api
-        // - app base URL:   http://host:port
-        // In both cases we normalize to a URL ending with /api.
-        $configuredUrl = env('API_URL')
-            ?? env('EXTERNAL_API_URL')
+        $configuredUrl = config('services.promatch.api_url')
+            ?? env('API_URL')
             ?? 'http://127.0.0.1:8000';
 
         $apiUrl = rtrim($configuredUrl, '/');
         $apiPath = parse_url($apiUrl, PHP_URL_PATH) ?? '';
+
         if (!str_ends_with($apiPath, '/api')) {
             $apiUrl .= '/api';
         }
 
         if ($request && parse_url($apiUrl, PHP_URL_HOST) === '10.0.2.2') {
             $isAndroid = str_contains(strtolower($request->userAgent() ?? ''), 'android');
+
             if (!$isAndroid && in_array($request->getHost(), ['localhost', '127.0.0.1'], true)) {
                 $apiUrl = str_replace('10.0.2.2', '127.0.0.1', $apiUrl);
             }
@@ -55,12 +53,7 @@ abstract class Controller
         $sameLoopbackHost = in_array($apiHost, $loopbackHosts, true)
             && in_array($requestHost, $loopbackHosts, true);
 
-        if (
-            $sameLoopbackHost
-            && (int) $normalizedApiPort === (int) $requestPort
-            && str_starts_with($request->path(), 'api/')
-            && str_ends_with(rtrim($apiPath, '/'), '/api')
-        ) {
+        if ($sameLoopbackHost && (int) $normalizedApiPort === (int) $requestPort && str_ends_with(rtrim($apiPath, '/'), '/api')) {
             throw new \RuntimeException(
                 'Configuration API invalide: API_URL pointe vers cette application. ' .
                 'Lancez le backend sur un autre port ou mettez API_URL vers le vrai serveur API.'
@@ -70,12 +63,16 @@ abstract class Controller
 
     protected function apiClient(Request $request = null)
     {
+        $request = $request ?? request();
         $client = Http::timeout(10)->acceptJson();
 
-        // Prefer the session token (set after login).
-        // Fall back to the Bearer token sent by the JS frontend (Authorization header),
-        // so that direct fetch() calls from the browser are also proxied correctly.
-        $token = session('api_token') ?? (($request ?? request())->bearerToken());
+        $apiHost = parse_url($this->apiUrl($request), PHP_URL_HOST);
+
+        if ($apiHost) {
+            $client = $client->withCookies($request->cookies->all(), $apiHost);
+        }
+
+        $token = session('api_token') ?? $request->bearerToken();
 
         if ($token) {
             $client = $client->withToken($token);
@@ -100,6 +97,16 @@ abstract class Controller
             ? $payload['message']
             : ($body !== '' ? mb_substr($body, 0, 220) : 'Erreur API.');
 
+        if (is_array($payload) && !empty($payload['errors']) && is_array($payload['errors'])) {
+            $firstError = collect($payload['errors'])->flatten()->first();
+
+            if ($firstError) {
+                $message = $message !== 'Invalid reservation data'
+                    ? $message . ': ' . $firstError
+                    : $firstError;
+            }
+        }
+
         $error = [
             'success' => false,
             'message' => $message,
@@ -114,10 +121,15 @@ abstract class Controller
 
     protected function apiUnavailableResponse(Throwable $exception): JsonResponse
     {
-        return response()->json([
+        $payload = [
             'success' => false,
-            'message' => 'API indisponible. Verifiez que le serveur ProMatch est lance.',
-            'detail' => $exception->getMessage(),
-        ], 502);
+            'message' => 'API indisponible. Vérifiez que le serveur ProMatch est lancé.',
+        ];
+
+        if (config('app.debug')) {
+            $payload['detail'] = $exception->getMessage();
+        }
+
+        return response()->json($payload, 502);
     }
 }

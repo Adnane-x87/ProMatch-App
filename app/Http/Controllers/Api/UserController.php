@@ -36,8 +36,8 @@ class UserController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => $data['message'] ?? 'Connexion reussie',
-                'data' => $data['data'] ?? [],
+                'message' => $data['message'] ?? 'Connexion réussie.',
+                'data' => $data['data']['user'] ?? $data['user'] ?? $data['data'] ?? [],
                 'token' => $data['token'] ?? $data['access_token'] ?? null,
             ]);
         } catch (\Throwable $exception) {

@@ -3,38 +3,11 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@yield('title', 'ProMatch — Admin Dashboard')</title>
+    <title>@yield('title', 'ProMatch - Admin')</title>
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: { 
-                        sans: ['"Plus Jakarta Sans"', 'sans-serif'] 
-                    },
-                    colors: {
-                        brand: {
-                            50: '#f0f9f1',
-                            100: '#dcf1df',
-                            200: '#bbe2c3',
-                            300: '#8dca9e',
-                            400: '#5eac72',
-                            500: '#4da565',
-                            600: '#3d8a54',
-                            700: '#327145',
-                        }
-                    }
-                },
-            },
-        };
-    </script>
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
+        body { font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 3px; }
@@ -54,8 +27,7 @@
             <!-- Logo -->
             <div class="h-20 relative flex items-center justify-center border-b border-slate-100 bg-white z-10">
                 <a href="{{ url('/admin/dashboard') }}" class="flex items-center gap-2">
-                    <span class="w-8 h-8 rounded-lg bg-brand-600 text-white font-bold flex items-center justify-center text-lg italic">P</span>
-                    <span class="text-xl font-extrabold tracking-tight">Pro<span class="text-brand-600">Match</span></span>
+                    <img src="/images/logo.png" alt="ProMatch Logo" class="h-10 w-auto">
                 </a>
             </div>
 
@@ -143,3 +115,5 @@
     @stack('scripts')
 </body>
 </html>
+
+

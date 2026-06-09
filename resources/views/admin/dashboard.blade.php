@@ -8,7 +8,7 @@
     <!-- Header -->
     <div class="mb-6">
         <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Tableau de bord</h1>
-        <p class="text-sm text-slate-500 dark:text-slate-400">Aperçu de vos terrains aujourd'hui</p>
+        <p class="text-sm text-slate-500 dark:text-slate-400">Aperçu des données importées et réservations</p>
     </div>
 
     <!-- Loading State -->
@@ -33,14 +33,14 @@
             <!-- Decorative circle -->
             <div class="absolute -top-12 -right-12 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
             
-            <p class="text-brand-100 text-sm font-medium mb-1 drop-shadow-sm">Recettes aujourd'hui</p>
+            <p class="text-brand-100 text-sm font-medium mb-1 drop-shadow-sm">Recettes</p>
             <div class="flex items-end gap-2">
                 <h2 class="text-4xl font-extrabold tracking-tight drop-shadow-md" x-text="revenue"></h2>
                 <span class="text-lg font-bold text-brand-200 mb-1">MAD</span>
             </div>
             <div class="mt-4 inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/20 backdrop-blur-md text-xs font-bold text-white border border-white/20">
                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
-                Détails via API
+                Données API / CSV
             </div>
         </div>
 
@@ -61,6 +61,45 @@
             </div>
         </div>
 
+        <!-- Reservation Requests Section -->
+        <div>
+            <div class="flex items-center justify-between mb-3 px-1">
+                <h2 class="text-sm font-extrabold text-slate-900 dark:text-white uppercase tracking-wider">
+                    Demandes de réservation
+                    <span class="bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full ml-1 text-[10px]" x-text="reservationRequests.length"></span>
+                </h2>
+            </div>
+
+            <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm p-4">
+                <template x-if="reservationRequests.length === 0">
+                    <div class="text-center py-6">
+                        <svg class="w-10 h-10 text-slate-200 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414A1 1 0 0119 9.414V19a2 2 0 01-2 2z"></path></svg>
+                        <p class="text-sm text-slate-400 font-medium">Aucune demande en attente.</p>
+                    </div>
+                </template>
+
+                <div class="space-y-3">
+                    <template x-for="request in reservationRequests" :key="request.id">
+                        <div class="p-4 bg-slate-50 dark:bg-slate-700/30 rounded-2xl border border-slate-100 dark:border-slate-700">
+                            <div class="flex items-start justify-between gap-3">
+                                <div class="min-w-0">
+                                    <p class="text-sm font-bold text-slate-900 dark:text-white truncate" x-text="`${request.first_name} ${request.last_name || ''}`"></p>
+                                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1" x-text="request.field ? request.field.name : 'Terrain'"></p>
+                                    <p class="text-xs text-slate-400 mt-1" x-text="formatDateTime(request.start_time)"></p>
+                                </div>
+                                <span :class="statusColor(request.status)" class="px-2 py-1 rounded text-[9px] font-bold uppercase tracking-widest shrink-0" x-text="statusText(request.status)"></span>
+                            </div>
+
+                            <div class="mt-4 flex gap-2">
+                                <button @click="updateReservationStatus(request.id, 'APPROVED')" class="flex-1 py-2.5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-xl text-xs font-bold shadow-md active:scale-95 transition-all">Valider</button>
+                                <button @click="updateReservationStatus(request.id, 'REJECTED')" class="flex-1 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 rounded-xl text-xs font-bold active:scale-95 transition-all">Refuser</button>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </div>
+
         <!-- Validations CNI Section -->
         <template x-if="pendingReservations.length > 0">
             <div>
@@ -75,7 +114,7 @@
                                 <div class="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-xs font-bold text-slate-600 dark:text-slate-300" x-text="initials(task.first_name, task.last_name)"></div>
                                 <div>
                                     <p class="text-sm font-bold text-slate-900 dark:text-white truncate" x-text="`${task.first_name} ${task.last_name || ''}`"></p>
-                                    <p class="text-[10px] text-slate-400 font-medium" x-text="formatTime(task.start_time) + ' • ' + (task.field ? task.field.name : '')"></p>
+                                    <p class="text-[10px] text-slate-400 font-medium" x-text="formatTime(task.start_time) + ' - ' + (task.field ? task.field.name : '')"></p>
                                 </div>
                             </div>
                             
@@ -99,10 +138,10 @@
             </div>
         </template>
 
-        <!-- Planning du Jour (Mobile Timeline) -->
+        <!-- Planning (Mobile Timeline) -->
         <div>
             <div class="flex items-center justify-between mb-4 px-1">
-                <h2 class="text-sm font-extrabold text-slate-900 dark:text-white uppercase tracking-wider">Planning du jour</h2>
+                <h2 class="text-sm font-extrabold text-slate-900 dark:text-white uppercase tracking-wider">Planning</h2>
             </div>
             
             <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm p-5">
@@ -149,7 +188,7 @@
             // Always refresh localStorage with the latest server-side token
             localStorage.setItem('api_token', metaToken);
         } else {
-            // No active session token — clear stale cache to avoid infinite 401 loops
+            // No active session token - clear stale cache to avoid infinite 401 loops
             localStorage.removeItem('api_token');
         }
 
@@ -160,6 +199,7 @@
 
         return {
             planning: [],
+            reservationRequests: [],
             revenue: 0,
             reservationsCount: 0,
             activePlayersCount: 0,
@@ -182,42 +222,156 @@
                         headers['Authorization'] = `Bearer ${API_CONFIG.token}`;
                     }
 
-                    // STRICT API FETCH: No dummy data fallback
-                    const res = await fetch(`${API_CONFIG.baseUrl}/api/planning?date=${today}&t=${timestamp}`, {
-                        headers: headers,
-                        cache: 'no-store',
-                        credentials: 'include'  // Always send session cookie
-                    });
+                    const planningData = await this.fetchJson(
+                        `${API_CONFIG.baseUrl}/api/planning?date=${today}&t=${timestamp}`,
+                        headers
+                    );
+                    let planning = this.extractList(planningData);
 
-                    if (res.ok) {
-                        const data = await res.json();
-                        this.planning = data.data || [];
-                        this.calculateStats();
-                    } else if (res.status === 401) {
-                        this.error = "Erreur 401 : Vous devez vous authentifier auprès de l'API pour voir le tableau de bord (Sanctum).";
-                    } else {
-                        this.error = `Erreur API: ${res.status} ${res.statusText}`;
+                    if (planning.length === 0) {
+                        const allPlanningData = await this.fetchJson(
+                            `${API_CONFIG.baseUrl}/api/planning?t=${timestamp}`,
+                            headers
+                        );
+                        planning = this.extractList(allPlanningData);
+                    }
+
+                    this.planning = planning.map((item, index) => this.normalizeReservation(item, index));
+                    this.reservationRequests = await this.fetchReservationRequests(headers, timestamp);
+                    if (this.reservationRequests.length === 0) {
+                        this.reservationRequests = this.planning.filter((item) => this.isPendingRequest(item));
+                    }
+                    this.calculateStats();
+
+                    try {
+                        const statsData = await this.fetchJson(`${API_CONFIG.baseUrl}/api/dashboard/stats?t=${timestamp}`, headers);
+                        this.applyStats(statsData);
+                    } catch (statsError) {
+                        this.error = this.error || null;
                     }
                 } catch (e) {
-                    console.error('Fetch error:', e);
-                    this.error = "Erreur de connexion à l'API. Assurez-vous que l'API est lancée.";
+                    this.error = e.message || "Erreur de connexion à l'API. Assurez-vous que l'API est lancée.";
                 } finally {
                     this.loading = false;
                 }
             },
 
+            async fetchJson(url, headers) {
+                const res = await fetch(url, {
+                    headers: headers,
+                    cache: 'no-store',
+                    credentials: 'include'
+                });
+
+                if (res.status === 401) {
+                    throw new Error("Erreur 401 : vous devez vous authentifier auprès de l'API pour voir le tableau de bord.");
+                }
+
+                if (!res.ok) {
+                    throw new Error(`Erreur API: ${res.status} ${res.statusText}`);
+                }
+
+                return await res.json();
+            },
+
+            extractList(payload) {
+                if (Array.isArray(payload)) return payload;
+                if (Array.isArray(payload?.data)) return payload.data;
+                if (Array.isArray(payload?.data?.reservations)) return payload.data.reservations;
+                if (Array.isArray(payload?.data?.planning)) return payload.data.planning;
+                if (Array.isArray(payload?.reservations)) return payload.reservations;
+                if (Array.isArray(payload?.planning)) return payload.planning;
+                if (Array.isArray(payload?.items)) return payload.items;
+                return [];
+            },
+
+            async fetchReservationRequests(headers, timestamp) {
+                try {
+                    const requestsData = await this.fetchJson(
+                        `${API_CONFIG.baseUrl}/api/reservations?status=PENDING&t=${timestamp}`,
+                        headers
+                    );
+                    let requests = this.extractList(requestsData);
+
+                    if (requests.length === 0) {
+                        const allRequestsData = await this.fetchJson(
+                            `${API_CONFIG.baseUrl}/api/reservations?t=${timestamp}`,
+                            headers
+                        );
+                        requests = this.extractList(allRequestsData).filter((item) => this.isPendingRequest(item));
+                    }
+
+                    return requests.map((item, index) => this.normalizeReservation(item, index));
+                } catch (requestsError) {
+                    return [];
+                }
+            },
+
+            normalizeReservation(item, index) {
+                const field = item.field || item.terrain || {};
+                const user = item.user || item.client || item.customer || {};
+                const firstName = item.first_name || item.firstname || user.first_name || user.firstname || item.client_first_name || item.name || '';
+                const lastName = item.last_name || item.lastname || user.last_name || user.lastname || item.client_last_name || '';
+
+                return {
+                    ...item,
+                    id: item.id || item.reservation_id || `csv-${index}`,
+                    first_name: firstName,
+                    last_name: lastName,
+                    start_time: item.start_time || item.starts_at || item.selected_time || item.date_time || item.time || item.hour || '',
+                    status: (item.status || item.state || 'PENDING').toString().toUpperCase(),
+                    cni_image: item.cni_image || item.cni || item.cni_path || '',
+                    field: {
+                        ...field,
+                        name: field.name || field.title || item.field_name || item.terrain_name || 'Terrain',
+                        price_per_hour: field.price_per_hour || field.price || item.price_per_hour || item.price || item.amount || 0,
+                    },
+                };
+            },
+
+            isPendingRequest(item) {
+                const status = (item.status || item.state || 'PENDING').toString().toUpperCase();
+                return ['PENDING', 'REQUESTED', 'WAITING', 'EN_ATTENTE'].includes(status);
+            },
+
             calculateStats() {
-                this.reservationsCount = this.planning.length;
-                this.revenue = this.planning.reduce((sum, res) => {
+                const combinedReservations = [...this.planning];
+                this.reservationRequests.forEach((request) => {
+                    if (!combinedReservations.some((reservation) => reservation.id === request.id)) {
+                        combinedReservations.push(request);
+                    }
+                });
+
+                this.reservationsCount = combinedReservations.length;
+                this.revenue = combinedReservations.reduce((sum, res) => {
                     if (res.status === 'APPROVED' || res.status === 'CONFIRMED' || res.status === 'PENDING') {
-                        const price = res.field ? parseFloat(res.field.price_per_hour) : 0;
+                        const price = res.field ? parseFloat(res.field.price_per_hour) : parseFloat(res.amount || res.price || 0);
                         return sum + (isNaN(price) ? 0 : price);
                     }
                     return sum;
                 }, 0);
                 
-                this.pendingValidationsCount = this.planning.filter(r => r.status === 'PENDING').length;
-                this.activePlayersCount = this.planning.length * 4;
+                this.pendingValidationsCount = Math.max(
+                    this.planning.filter(r => r.status === 'PENDING').length,
+                    this.reservationRequests.length
+                );
+                this.activePlayersCount = combinedReservations.length * 4;
+            },
+
+            applyStats(payload) {
+                const stats = payload?.data || payload || {};
+                const revenue = stats.revenue ?? stats.today_revenue ?? stats.total_revenue ?? stats.totalRevenue;
+                const reservations = stats.reservations_count ?? stats.reservations ?? stats.total_reservations ?? stats.totalReservations;
+                const players = stats.active_players_count ?? stats.active_players ?? stats.players_count ?? stats.players;
+                const pending = stats.pending_validations_count ?? stats.pending_validations ?? stats.pending_reservations ?? stats.pending;
+
+                if (revenue !== undefined && !Array.isArray(revenue)) this.revenue = parseFloat(revenue) || 0;
+                if (reservations !== undefined) this.reservationsCount = Array.isArray(reservations) ? reservations.length : (parseInt(reservations, 10) || 0);
+                if (players !== undefined) this.activePlayersCount = Array.isArray(players) ? players.length : (parseInt(players, 10) || 0);
+                if (pending !== undefined) {
+                    const pendingCount = Array.isArray(pending) ? pending.length : (parseInt(pending, 10) || 0);
+                    this.pendingValidationsCount = Math.max(pendingCount, this.reservationRequests.length);
+                }
             },
 
             get pendingReservations() {
@@ -235,6 +389,13 @@
                 const parts = timeString.split(' ');
                 const timePart = parts.length > 1 ? parts[1] : parts[0];
                 return timePart.substring(0, 5);
+            },
+
+            formatDateTime(value) {
+                if (!value) return '';
+                const datePart = value.includes(' ') ? value.split(' ')[0] : '';
+                const timePart = this.formatTime(value);
+                return [datePart, timePart].filter(Boolean).join(' - ');
             },
 
             statusColor(status) {
@@ -264,6 +425,10 @@
             },
 
             async validateReservation(id) {
+                await this.updateReservationStatus(id, 'APPROVED');
+            },
+
+            async updateReservationStatus(id, status) {
                 try {
                     const headers = { 
                         'Content-Type': 'application/json',
@@ -276,25 +441,26 @@
                     const res = await fetch(`${API_CONFIG.baseUrl}/api/reservations/${id}/validate`, {
                         method: 'PUT',
                         headers: headers,
-                        body: JSON.stringify({ status: 'APPROVED' }),
+                        body: JSON.stringify({ status: status }),
                         credentials: 'include'  // Always send session cookie
                     });
 
                     if (res.ok) {
-                        const index = this.planning.findIndex(r => r.id === id);
-                        if (index !== -1) {
-                            this.planning[index].status = 'APPROVED';
-                            this.calculateStats();
-                        }
+                        this.planning = this.planning.map((reservation) => {
+                            return reservation.id === id ? { ...reservation, status: status } : reservation;
+                        });
+                        this.reservationRequests = this.reservationRequests.filter((reservation) => reservation.id !== id);
+                        this.calculateStats();
                     } else {
-                        alert("Erreur " + res.status + " : L'action a échoué.");
+                        const data = await res.json().catch(() => ({}));
+                        this.error = data.message || "L'action a échoué.";
                     }
                 } catch (e) {
-                    console.error("Validation error:", e);
-                    alert("Erreur de connexion.");
+                    this.error = e.message || "Erreur de connexion.";
                 }
             }
         }
     }
 </script>
 @endsection
+

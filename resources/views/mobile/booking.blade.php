@@ -20,14 +20,20 @@
         </template>
 
         <div x-show="!loading" x-cloak>
+            <template x-if="error">
+                <div class="mx-6 mt-6 rounded-xl border border-red-200 bg-red-50 p-4">
+                    <p class="text-sm font-semibold text-red-700" x-text="error"></p>
+                </div>
+            </template>
+
             <!-- Terrain Selection -->
             <div class="p-6 border-b border-slate-100">
                 <label class="block text-sm font-medium text-slate-700 mb-2">Terrain</label>
-                <select x-model="formData.field_id" @change="fetchTimeSlots()"
+                <select name="field_id" x-ref="fieldSelect" x-model="formData.field_id" @change="fetchTimeSlots()"
                     class="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none transition-all">
                     <option value="">Sélectionnez un terrain</option>
-                    <template x-for="field in fields" :key="field.id">
-                        <option :value="field.id" x-text="`${field.name} (${field.price_per_hour} DH/h)`"></option>
+                    <template x-for="field in fields" :key="fieldId(field)">
+                        <option :value="fieldId(field)" x-text="`${field.name} (${field.price_per_hour} DH/h)`"></option>
                     </template>
                 </select>
             </div>
@@ -35,7 +41,7 @@
             <!-- Date -->
             <div class="p-6 border-b border-slate-100">
                 <label class="block text-sm font-medium text-slate-700 mb-2">Date</label>
-                <input type="date" x-model="formData.date" @change="fetchTimeSlots()"
+                <input type="date" x-model="formData.date" :min="today" @change="handleDateChange()"
                     class="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none transition-all">
             </div>
 
@@ -55,10 +61,10 @@
                     <div class="grid grid-cols-4 gap-3">
                         <template x-for="slot in timeSlots" :key="slot.id">
                             <button type="button"
-                                @click="formData.time_slot_id = slot.id; formData.selected_time = slot.start_time"
+                                @click="selectSlot(slot)"
                                 :class="formData.time_slot_id == slot.id ? 'bg-brand-600 text-white border-brand-600' : 'border-slate-200 text-slate-600 hover:border-brand-500 hover:text-brand-600'"
                                 class="py-2.5 px-3 rounded-lg border text-sm font-medium transition-all text-center"
-                                x-text="slot.start_time">
+                                x-text="displayTime(slot.start_time)">
                             </button>
                         </template>
                     </div>
@@ -151,7 +157,7 @@
                     <span x-text="submitting ? 'Envoi...' : 'Envoyer la demande'"></span>
                 </button>
                 <p x-show="!isFormValid" class="text-[10px] text-red-500 text-center mt-2 font-medium">Veuillez remplir tous les champs<span x-show="!isCniAlreadyValid"> et ajouter votre CNI</span>.</p>
-                <p class="text-xs text-slate-400 text-center mt-3">Paiement sur place • Confirmation sous 24h</p>
+                <p class="text-xs text-slate-400 text-center mt-3">Paiement sur place - Confirmation sous 24h</p>
             </div>
         </div>
     </div>
@@ -196,7 +202,6 @@
 
 <script>
     function bookingApp() {
-        // --- Configuration ---
         const API_CONFIG = {
             baseUrl: '',
             token: "{{ session('api_token', '') }}",
@@ -209,10 +214,11 @@
             slotsLoading: false,
             submitting: false,
             showSuccess: false,
-            error: null, // Error state for UI feedback
+            error: null,
+            today: new Date().toISOString().split('T')[0],
             isCniAlreadyValid: {{ session('user.tenant.is_cni_valid', false) ? 'true' : 'false' }},
             cniPreview: null,
-            cniFile: null, // 👈 Added to store the actual file object
+            cniFile: null,
             formData: {
                 field_id: '',
                 date: '',
@@ -222,177 +228,240 @@
                 last_name: "{{ session('user.last_name', '') }}",
                 phone: "{{ session('user.phone', '') }}",
                 email: "{{ session('user.email', '') }}",
-                cni_image_base64: ''
             },
-            
+
             async init() {
                 const urlParams = new URLSearchParams(window.location.search);
-                this.formData.field_id = urlParams.get('id') || '';
-                
-                const today = new Date().toISOString().split('T')[0];
-                this.formData.date = today;
-                
+                const preselectedId = urlParams.get('id') ? parseInt(urlParams.get('id'), 10) : '';
+                this.formData.field_id = preselectedId;
+                this.formData.date = this.today;
+
                 await this.fetchFields();
+                
+                if (preselectedId) {
+                    this.formData.field_id = preselectedId;
+                }
+
                 if (this.formData.field_id) {
                     await this.fetchTimeSlots();
                 }
             },
 
             get headers() {
-                const h = { 'Accept': 'application/json' };
+                const headers = { 'Accept': 'application/json' };
                 if (API_CONFIG.token) {
-                    h['Authorization'] = `Bearer ${API_CONFIG.token}`;
+                    headers.Authorization = `Bearer ${API_CONFIG.token}`;
                 }
-                return h;
+                return headers;
+            },
+
+            async fetchJson(url, options = {}) {
+                const response = await fetch(url, {
+                    cache: 'no-store',
+                    credentials: 'include',
+                    ...options,
+                });
+                const data = await response.json().catch(() => ({}));
+
+                if (!response.ok) {
+                    const validationErrors = data.errors ? Object.values(data.errors).flat() : [];
+                    throw new Error(validationErrors[0] || data.message || `Erreur ${response.status}`);
+                }
+
+                return data;
             },
 
             async fetchFields() {
                 this.loading = true;
                 this.error = null;
-                const timestamp = new Date().getTime();
+
                 try {
-                    console.log(`Fetching fields from: ${API_CONFIG.baseUrl}/api/public-fields?t=${timestamp}`);
-                    const res = await fetch(`${API_CONFIG.baseUrl}/api/public-fields?t=${timestamp}`, { 
-                        cache: 'no-store'
-                    });
-                    
-                    if (!res.ok) throw new Error(`Erreur ${res.status}: ${res.statusText}`);
-                    const data = await res.json();
-                    
-                    this.fields = data.data || data || [];
-                    console.log('Fields loaded:', this.fields);
-                    
+                    const data = await this.fetchJson(`${API_CONFIG.baseUrl}/api/public-fields?t=${Date.now()}`);
+                    this.fields = Array.isArray(data.data) ? data.data : (Array.isArray(data) ? data : []);
+
                     if (this.fields.length === 0) {
-                        this.error = "Aucun terrain trouvé sur le serveur.";
+                        this.error = 'Aucun terrain disponible pour le moment.';
                     }
-                } catch (e) {
-                    console.error('Error fetching fields:', e);
-                    this.error = "Erreur de connexion : " + e.message;
+                } catch (error) {
+                    this.error = error.message || 'Impossible de charger les terrains.';
                 } finally {
                     this.loading = false;
                 }
             },
 
+            async handleDateChange() {
+                if (this.formData.date && this.formData.date < this.today) {
+                    this.formData.date = this.today;
+                    this.error = 'Veuillez choisir une date à partir d’aujourd’hui.';
+                }
+
+                await this.fetchTimeSlots();
+            },
+
             async fetchTimeSlots() {
                 if (!this.formData.field_id || !this.formData.date) return;
-                
+
                 this.slotsLoading = true;
                 this.formData.time_slot_id = '';
                 this.formData.selected_time = '';
+                this.timeSlots = [];
                 this.error = null;
-                
-                const timestamp = new Date().getTime();
-                try {
-                    const res = await fetch(`${API_CONFIG.baseUrl}/api/available-slots?field_id=${this.formData.field_id}&date=${this.formData.date}&t=${timestamp}`, { 
-                        cache: 'no-store'
-                    });
 
-                    if (res.ok) {
-                        const data = await res.json();
-                        this.timeSlots = data.data || data || [];
-                    } else if (res.status === 404) {
-                        console.warn("L'endpoint /api/available-slots n'existe pas encore. Utilisation des créneaux par défaut.");
-                        this.useDummySlots();
-                    } else {
-                        throw new Error(`Erreur ${res.status}`);
-                    }
-                } catch (e) {
-                    console.error('Error fetching slots:', e);
-                    this.useDummySlots();
+                try {
+                    const params = new URLSearchParams({
+                        field_id: this.formData.field_id,
+                        date: this.formData.date,
+                        t: Date.now().toString(),
+                    });
+                    const data = await this.fetchJson(`${API_CONFIG.baseUrl}/api/available-slots?${params.toString()}`);
+                    const slots = Array.isArray(data.data) ? data.data : (Array.isArray(data) ? data : []);
+                    this.timeSlots = slots
+                        .map((slot) => ({
+                            ...slot,
+                            start_time: this.displayTime(slot.start_time || slot.time || slot.selected_time),
+                        }))
+                        .filter((slot) => slot.start_time);
+                } catch (error) {
+                    this.error = error.message || 'Impossible de charger les créneaux disponibles.';
                 } finally {
                     this.slotsLoading = false;
                 }
             },
 
-            useDummySlots() {
-                this.timeSlots = [
-                    { id: 1, start_time: '18:00' },
-                    { id: 2, start_time: '19:00' },
-                    { id: 3, start_time: '20:00' },
-                    { id: 4, start_time: '21:00' },
-                ];
+            displayTime(value) {
+                if (!value) return '';
+
+                const raw = value.toString();
+                const timePart = raw.includes('T')
+                    ? raw.split('T').pop()
+                    : (raw.includes(' ') ? raw.split(' ').pop() : raw);
+
+                return timePart.substring(0, 5);
             },
 
-            handleFileUpload(e) {
-                const file = e.target.files[0];
+            selectSlot(slot) {
+                this.formData.time_slot_id = slot.id;
+                this.formData.selected_time = this.displayTime(slot.start_time);
+            },
+
+            selectedDateTimeForSubmit() {
+                const time = this.displayTime(this.formData.selected_time);
+                if (!this.formData.date || !time) return '';
+
+                return `${this.formData.date} ${time}:00`;
+            },
+
+            handleFileUpload(event) {
+                const file = event.target.files[0];
                 if (!file) return;
 
-                // Validate file size (e.g., max 5MB)
-                const maxSize = 5 * 1024 * 1024;
-                if (file.size > maxSize) {
-                    alert("L'image est trop volumineuse (maximum 5 Mo). Veuillez choisir une photo plus petite.");
-                    e.target.value = ''; // Reset input
+                if (file.size > 5 * 1024 * 1024) {
+                    this.error = 'L’image est trop volumineuse. La taille maximale est de 5 Mo.';
+                    event.target.value = '';
                     return;
                 }
-                
-                this.cniFile = file; // Store the actual file object
-                this.cniPreview = URL.createObjectURL(file); // Set preview
+
+                this.error = null;
+                this.cniFile = file;
+                this.cniPreview = URL.createObjectURL(file);
             },
 
             get isFormValid() {
-                return this.formData.field_id && 
-                       this.formData.date && 
-                       this.formData.time_slot_id && 
-                       this.formData.first_name && 
-                       this.formData.last_name && 
-                       this.formData.phone && 
-                       this.formData.email && 
-                       (this.isCniAlreadyValid || this.cniFile);
+                return !!this.selectedFieldIdForSubmit() &&
+                    this.formData.date &&
+                    this.formData.date >= this.today &&
+                    this.formData.time_slot_id &&
+                    this.formData.selected_time &&
+                    this.formData.first_name &&
+                    this.formData.last_name &&
+                    this.formData.phone &&
+                    this.formData.email &&
+                    (this.isCniAlreadyValid || this.cniFile);
             },
 
             get totalPrice() {
-                const field = this.fields.find(f => f.id == this.formData.field_id);
+                const field = this.fields.find((item) => this.fieldId(item) == this.selectedFieldIdForSubmit());
                 return field ? `${field.price_per_hour} DH` : '0 DH';
             },
 
             getSelectedFieldName() {
-                const field = this.fields.find(f => f.id == this.formData.field_id);
+                const field = this.fields.find((item) => this.fieldId(item) == this.selectedFieldIdForSubmit());
                 return field ? field.name : '-';
             },
 
+            fieldId(field) {
+                return field?.id ?? field?.field_id ?? field?.terrain_id ?? field?.terrainId ?? '';
+            },
+
+            selectedFieldIdForSubmit() {
+                const selectedOption = this.$refs.fieldSelect?.selectedOptions?.[0];
+
+                return this.formData.field_id ||
+                    this.$refs.fieldSelect?.value ||
+                    selectedOption?.value ||
+                    '';
+            },
+
             async submitBooking() {
-                if (!this.isFormValid) return;
-                
+                if (!this.isFormValid || this.submitting) return;
+
                 this.submitting = true;
                 this.error = null;
-                
+
                 try {
-                    // 🚀 NEW: Using FormData for native file upload handling
+                    // Convert the raw select value to a positive integer
+                    const rawId = this.selectedFieldIdForSubmit();
+                    const fieldId = parseInt(String(rawId), 10);
+
+                    console.log('SELECTED FIELD BEFORE SEND', {
+                        model: this.formData.field_id,
+                        selectValue: this.$refs.fieldSelect?.value,
+                        selectedOptionValue: this.$refs.fieldSelect?.selectedOptions?.[0]?.value,
+                        selectedOptionText: this.$refs.fieldSelect?.selectedOptions?.[0]?.text,
+                        rawId,
+                        fieldId,
+                    });
+
+                    if (!fieldId || fieldId <= 0) {
+                        // Shouldn't normally reach here (isFormValid guards it),
+                        // but acts as a safety net.
+                        this.error = 'Veuillez sélectionner un terrain.';
+                        this.submitting = false;
+                        return;
+                    }
+                    this.formData.field_id = fieldId;
+
                     const body = new FormData();
-                    
-                    // Append all text fields
-                    Object.keys(this.formData).forEach(key => {
-                        if (key !== 'cni_image_base64') {
-                            body.append(key, this.formData[key]);
-                        }
-                    });
+                    body.append('field_id', String(fieldId));
+                    body.append('date', this.formData.date);
+                    body.append('selected_time', this.selectedDateTimeForSubmit());
+                    body.append('first_name', this.formData.first_name.trim());
+                    body.append('last_name', this.formData.last_name.trim());
+                    body.append('email', this.formData.email.trim());
+                    body.append('phone', this.formData.phone.trim());
 
-                    // Append the actual file
+                    const slotId = Number(this.formData.time_slot_id);
+                    if (slotId && slotId < 9000) {
+                        body.append('time_slot_id', String(this.formData.time_slot_id));
+                    }
+
                     if (this.cniFile) {
-                        body.append('cni_image', this.cniFile); // The backend expects 'cni_image'
+                        body.append('cni_image', this.cniFile);
                     }
 
-                    const res = await fetch(`${API_CONFIG.baseUrl}/api/reservations`, {
-                        method: 'POST',
-                        headers: { 
-                            'Accept': 'application/json',
-                            // ⚠️ DO NOT set Content-Type header when using FormData, 
-                            // the browser will set it automatically with the correct boundary
-                            ...(API_CONFIG.token ? { 'Authorization': `Bearer ${API_CONFIG.token}` } : {})
-                        },
-                        body: body
-                    });
-                    
-                    if (res.ok) {
-                        this.showSuccess = true;
-                    } else {
-                        const errorData = await res.json().catch(() => ({}));
-                        throw new Error(errorData.message || `Erreur ${res.status}: Échec de l'envoi de la demande.`);
+                    for (const [key, value] of body.entries()) {
+                        console.log('FORMDATA ITEM:', key, value);
                     }
-                } catch (e) {
-                    console.error('Submission error:', e);
-                    this.error = "Erreur lors de l'envoi : " + e.message;
-                    alert("the error is: \n" + e.message);
+
+                    await this.fetchJson(`${API_CONFIG.baseUrl}/api/reservations`, {
+                        method: 'POST',
+                        headers: this.headers,
+                        body,
+                    });
+
+                    this.showSuccess = true;
+                } catch (error) {
+                    this.error = error.message || 'Impossible d’envoyer la demande de réservation.';
                 } finally {
                     this.submitting = false;
                 }
@@ -401,3 +470,4 @@
     }
 </script>
 @endsection
+

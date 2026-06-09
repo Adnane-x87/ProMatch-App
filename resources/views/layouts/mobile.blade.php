@@ -6,17 +6,10 @@
     <meta name="theme-color" content="#2563eb">
     <title>{{ config('app.name', 'ProMatch') }}</title>
 
-    <!-- Fonts: Plus Jakarta Sans for the new professional design -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-
-    <!-- Tailwind CSS 4 & Alpine.js -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
     <style>
-        body { font-family: 'Plus Jakarta Sans', 'Outfit', sans-serif; }
+        body { font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
         [x-cloak] { display: none !important; }
         
         .glass { @apply backdrop-blur-md bg-white/10 dark:bg-black/20 border border-white/20 dark:border-white/10; }
@@ -46,7 +39,6 @@
         .safe-pb { padding-bottom: env(safe-area-inset-bottom, 1.5rem); }
         .gradient-bg {
             background: radial-gradient(circle at top right, rgba(37, 99, 235, 0.15), transparent),
-            background: radial-gradient(circle at top right, rgba(22, 163, 74, 0.15), transparent),
                         radial-gradient(circle at bottom left, rgba(21, 128, 61, 0.1), transparent);
         }
     </style>
@@ -55,23 +47,20 @@
     <!-- Top Header -->
     <header class="fixed top-0 left-0 right-0 z-50 glass shadow-sm px-6 safe-pt-header flex items-center justify-between backdrop-blur-xl border-b border-brand-100/20">
         <div class="flex items-center gap-2">
-            <div class="w-10 h-10 bg-gradient-to-tr from-brand-600 to-brand-400 rounded-xl flex items-center justify-center shadow-lg shadow-brand-600/20">
-                <span class="text-white font-bold text-xl uppercase italic">P</span>
-            </div>
-            <h1 class="text-xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-brand-700 to-brand-500">ProMatch</h1>
+            <img src="/images/logo.png" alt="ProMatch Logo" class="h-11 w-auto dark:brightness-150">
         </div>
         @if(session()->has('user'))
             <div class="flex items-center gap-2">
                 <div class="text-right mr-1">
                     <p class="text-[9px] font-bold text-slate-400 uppercase leading-none">Connecté</p>
                     <p class="text-[11px] font-bold text-brand-600">
-                        {{ session('user')['first_name'] ?? 'Utilisateur' }}
-                        @if(session('user')['type'] === 'owner')
+                        {{ session('user.first_name', 'Utilisateur') }}
+                        @if(session('user.type') === 'owner')
                             <span class="text-[8px] uppercase tracking-wider bg-brand-100 text-brand-700 px-1 py-0.5 rounded font-black ml-0.5">Admin</span>
                         @endif
                     </p>
                 </div>
-                @if(session('user')['type'] === 'owner' && !request()->is('admin*'))
+                @if(session('user.type') === 'owner' && !request()->is('admin*'))
                     <a href="{{ route('admin.dashboard') }}" class="px-2.5 py-1.5 bg-brand-600 hover:bg-brand-700 text-white text-[10px] font-bold rounded-lg transition-all shadow-sm">
                         Dashboard
                     </a>
@@ -149,3 +138,4 @@
     </nav>
 </body>
 </html>
+

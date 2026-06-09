@@ -1,11 +1,16 @@
 @extends('layouts.admin')
 
-@section('title', 'ProMatch — Gérer les terrains')
+@section('title', 'ProMatch - Gérer les terrains')
 @section('page-title', 'Gestion des terrains')
 @section('page-subtitle', 'Ajoutez, modifiez ou supprimez vos installations sportives')
 
 @section('content')
 <div x-data="fieldManager()" x-init="fetchFields()" class="space-y-6">
+    <template x-if="error">
+        <div class="rounded-xl border border-red-200 bg-red-50 p-4">
+            <p class="text-sm font-semibold text-red-700" x-text="error"></p>
+        </div>
+    </template>
     
     <!-- Top Actions -->
     <div class="flex justify-between items-center bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
@@ -58,8 +63,10 @@
                         <tr class="hover:bg-slate-50/50 transition-colors">
                             <td class="px-6 py-4">
                                 <div class="flex items-center gap-3">
-                                    <div class="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-brand-600">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/></svg>
+                                    <div class="w-10 h-10 rounded-xl overflow-hidden bg-slate-100 relative shadow-sm border border-slate-100 flex items-center justify-center">
+                                        <img :src="'/images/field_' + field.id + '.jpg'" 
+                                             class="w-full h-full object-cover"
+                                             x-on:error="$event.target.src = field.image_url || '/images/hero-bg.png'">
                                     </div>
                                     <div>
                                         <p class="font-bold text-slate-900" x-text="field.name"></p>
@@ -160,6 +167,7 @@
 <script>
     function fieldManager() {
         const API_URL = '/api/fields';
+        const API_TOKEN = @js(session('api_token', ''));
 
         return {
             fields: [],
@@ -167,6 +175,7 @@
             submitting: false,
             showModal: false,
             editingField: null,
+            error: null,
             formData: {
                 name: '',
                 address: '',
@@ -176,12 +185,19 @@
 
             async fetchFields() {
                 this.loading = true;
+                this.error = null;
                 try {
-                    const response = await fetch(API_URL);
+                    const response = await fetch(API_URL, {
+                        headers: this.headers,
+                        credentials: 'include',
+                    });
                     const result = await response.json();
+                    if (!response.ok) {
+                        throw new Error(result.message || 'Impossible de charger les terrains.');
+                    }
                     this.fields = result.data || result;
                 } catch (error) {
-                    console.error('Erreur lors de la récupération:', error);
+                    this.error = error.message || 'Impossible de charger les terrains.';
                 } finally {
                     this.loading = false;
                 }
@@ -201,6 +217,7 @@
 
             async saveField() {
                 this.submitting = true;
+                this.error = null;
                 const method = this.editingField ? 'PUT' : 'POST';
                 const url = this.editingField ? `${API_URL}/${this.editingField.id}` : API_URL;
 
@@ -208,9 +225,10 @@
                     const response = await fetch(url, {
                         method: method,
                         headers: { 
+                            ...this.headers,
                             'Content-Type': 'application/json',
-                            'Accept': 'application/json'
                         },
+                        credentials: 'include',
                         body: JSON.stringify(this.formData)
                     });
 
@@ -219,10 +237,10 @@
                         this.showModal = false;
                     } else {
                         const error = await response.json();
-                        alert('Erreur: ' + (error.message || 'Impossible de sauvegarder'));
+                        this.error = error.message || 'Impossible de sauvegarder ce terrain.';
                     }
                 } catch (error) {
-                    console.error('Erreur lors de la sauvegarde:', error);
+                    this.error = error.message || 'Impossible de sauvegarder ce terrain.';
                 } finally {
                     this.submitting = false;
                 }
@@ -231,19 +249,34 @@
             async deleteField(id) {
                 if (!confirm('Êtes-vous sûr de vouloir supprimer ce terrain ?')) return;
 
+                this.error = null;
                 try {
-                    const response = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+                    const response = await fetch(`${API_URL}/${id}`, {
+                        method: 'DELETE',
+                        headers: this.headers,
+                        credentials: 'include',
+                    });
                     if (response.ok) {
                         this.fields = this.fields.filter(f => f.id !== id);
                     } else {
-                        alert('Erreur lors de la suppression');
+                        const error = await response.json().catch(() => ({}));
+                        this.error = error.message || 'Impossible de supprimer ce terrain.';
                     }
                 } catch (error) {
-                    console.error('Erreur lors de la suppression:', error);
+                    this.error = error.message || 'Impossible de supprimer ce terrain.';
                 }
+            },
+
+            get headers() {
+                const headers = { 'Accept': 'application/json' };
+                if (API_TOKEN) {
+                    headers.Authorization = `Bearer ${API_TOKEN}`;
+                }
+                return headers;
             }
         }
     }
 </script>
 @endpush
 @endsection
+

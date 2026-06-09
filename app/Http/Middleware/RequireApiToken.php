@@ -15,15 +15,10 @@ class RequireApiToken
      */
     public function handle(Request $request, Closure $next): Response
     {
-        // Accept:
-        // 1) API token stored in web session after login,
-        // 2) Bearer token from JS calls,
-        // 3) Existing authenticated web session user as a fallback.
         $sessionToken = session('api_token');
         $bearerToken = $request->bearerToken();
-        $sessionUser = session('user');
 
-        if (empty($sessionToken) && empty($bearerToken) && empty($sessionUser)) {
+        if (empty($sessionToken) && empty($bearerToken)) {
             return response()->json(['message' => 'Unauthenticated.'], 401);
         }
 
